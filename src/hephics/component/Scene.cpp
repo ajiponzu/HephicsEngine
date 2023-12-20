@@ -4,34 +4,19 @@ std::vector<std::shared_ptr<hephics_helper::StagingBuffer>> hephics::Scene::s_st
 
 void hephics::Scene::Initialize(const std::shared_ptr<window::Window>& ptr_window)
 {
-	auto gpu_instance_option = hephics::GPUHandler::GetInstance(ptr_window->GetWindowTitle());
-	if (!gpu_instance_option.has_value())
-		throw std::runtime_error("failed to find vulkan_instance");
+	auto& gpu_instance = hephics::GPUHandler::GetInstance();
+	auto& copy_command_buffer = gpu_instance->GetGraphicCommandBuffer("copy");
 
-	auto& gpu_instance = gpu_instance_option.value();
-	auto& command_buffers = gpu_instance->GetGraphicCommandBuffers();
+	copy_command_buffer->ResetCommands({});
+	copy_command_buffer->BeginRecordingCommands({});
 
-	for (size_t idx = 0; idx < std::min(m_actors.size(), command_buffers.size()); idx++)
-	{
-		auto& command_buffer = command_buffers.at(idx);
-		command_buffer->ResetCommands({});
-		command_buffer->BeginRecordingCommands({});
-	}
-
-	size_t idx = 0;
 	for (auto& actor : m_actors)
-	{
-		actor->Initialize(gpu_instance, idx % command_buffers.size());
-		idx++;
-	}
+		actor->Initialize(gpu_instance);
+
+	copy_command_buffer->EndRecordingCommands();
 
 	std::vector<vk::CommandBuffer> submitted_command_buffers;
-	for (size_t idx = 0; idx < std::min(m_actors.size(), command_buffers.size()); idx++)
-	{
-		auto& command_buffer = command_buffers.at(idx);
-		command_buffer->EndRecordingCommands();
-		submitted_command_buffers.push_back(command_buffer->GetCommandBuffer().get());
-	}
+	submitted_command_buffers.push_back(copy_command_buffer->GetCommandBuffer().get());
 
 	vk::SubmitInfo submit_info({}, {}, submitted_command_buffers);
 	gpu_instance->SubmitCopyGraphicResource(submit_info);
@@ -40,61 +25,38 @@ void hephics::Scene::Initialize(const std::shared_ptr<window::Window>& ptr_windo
 
 void hephics::Scene::Update()
 {
-	auto gpu_instance_option = hephics::GPUHandler::GetInstance(m_windowTitle);
-	if (!gpu_instance_option.has_value())
-		throw std::runtime_error("failed to find vulkan_instance");
-
-	auto& gpu_instance = gpu_instance_option.value();
+	auto& gpu_instance = hephics::GPUHandler::GetInstance();
 	auto& logical_device = gpu_instance->GetLogicalDevice();
 	auto& swap_chain = gpu_instance->GetSwapChain();
-	const auto& command_buffers_size = gpu_instance->GetGraphicCommandBuffers().size();
 
 	swap_chain->AcquireNextImageIdx(logical_device); // update: next_image_idx, before using command buffer
 	swap_chain->WaitFence(logical_device);
 
-	size_t idx = 0;
 	for (auto& actor : m_actors)
-	{
-		const auto command_buffer_idx = idx % command_buffers_size;
-		actor->Update(gpu_instance, command_buffer_idx);
-		idx++;
-	}
+		actor->Update(gpu_instance);
 
 	swap_chain->CancelWaitFence(logical_device);
 }
 
 void hephics::Scene::Render()
 {
-	auto gpu_instance_option = hephics::GPUHandler::GetInstance(m_windowTitle);
-	if (!gpu_instance_option.has_value())
-		throw std::runtime_error("failed to find vulkan_instance");
-
-	auto& gpu_instance = gpu_instance_option.value();
-	const auto& command_buffers = gpu_instance->GetGraphicCommandBuffers();
+	auto& gpu_instance = hephics::GPUHandler::GetInstance();
 	const auto& swap_chain = gpu_instance->GetSwapChain();
+	const auto& command_buffers = gpu_instance->GetGraphicCommandBuffers();
+	auto& render_command_buffer = gpu_instance->GetGraphicCommandBuffer("render");
 
-	for (size_t idx = 0; idx < std::min(m_actors.size(), command_buffers.size()); idx++)
-	{
-		auto& command_buffer = command_buffers.at(idx);
-		command_buffer->ResetCommands({});
-		command_buffer->BeginRecordingCommands({});
-	}
+	render_command_buffer->ResetCommands({});
+	render_command_buffer->BeginRecordingCommands({});
+	render_command_buffer->BeginRenderPass(swap_chain, vk::SubpassContents::eInline);
 
-	size_t idx = 0;
 	for (auto& actor : m_actors)
-	{
-		const auto command_buffer_idx = idx % command_buffers.size();
-		actor->Render(gpu_instance, command_buffer_idx);
-		idx++;
-	}
+		actor->Render(gpu_instance);
+
+	render_command_buffer->EndRenderPass();
+	render_command_buffer->EndRecordingCommands();
 
 	std::vector<vk::CommandBuffer> submitted_command_buffers;
-	for (size_t idx = 0; idx < std::min(m_actors.size(), command_buffers.size()); idx++)
-	{
-		auto& command_buffer = command_buffers.at(idx);
-		command_buffer->EndRecordingCommands();
-		submitted_command_buffers.emplace_back(command_buffer->GetCommandBuffer().get());
-	}
+	submitted_command_buffers.push_back(render_command_buffer->GetCommandBuffer().get());
 
 	const auto submit_info =
 		swap_chain->GetRenderingSubmitInfo(submitted_command_buffers, vk::PipelineStageFlagBits::eColorAttachmentOutput);

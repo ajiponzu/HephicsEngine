@@ -33,10 +33,10 @@ void hephics::VkInstance::SetInstance(const vk::ApplicationInfo& app_info)
 #endif
 }
 
-void hephics::VkInstance::SetWindowSurface(const std::shared_ptr<window::Window>& ptr_window)
+void hephics::VkInstance::SetWindowSurface(const std::shared_ptr<window::Window>& window)
 {
 	::VkSurfaceKHR surface;
-	if (::glfwCreateWindowSurface(::VkInstance(m_instance.get()), ptr_window->GetPtrWindow(), nullptr, &surface)
+	if (::glfwCreateWindowSurface(::VkInstance(m_instance.get()), window->GetPtrWindow(), nullptr, &surface)
 		!= ::VkResult::VK_SUCCESS)
 		throw std::runtime_error("failed to create window surface!");
 
@@ -110,7 +110,7 @@ void hephics::VkInstance::SetLogicalDeviceAndQueue()
 		});
 }
 
-void hephics::VkInstance::SetSwapChain(const std::shared_ptr<window::Window>& ptr_window)
+void hephics::VkInstance::SetSwapChain(const std::shared_ptr<window::Window>& window)
 {
 	const auto swap_chain_support = QuerySwapChainSupport();
 
@@ -119,7 +119,7 @@ void hephics::VkInstance::SetSwapChain(const std::shared_ptr<window::Window>& pt
 	const auto present_mode = hephics_helper::vk_init::choose_swap_present_mode(swap_chain_support.present_modes,
 		vk::PresentModeKHR::eMailbox);
 	const auto extent = hephics_helper::vk_init::choose_swap_extent(swap_chain_support.capabilities,
-		ptr_window->GetPtrWindow());
+		window->GetPtrWindow());
 
 	auto image_count = swap_chain_support.capabilities.minImageCount + 1;
 
@@ -202,9 +202,10 @@ void hephics::VkInstance::SetCommandPools()
 		queue_family_indices.graphics_family.value());
 
 	const auto command_pool_size = m_ptrSwapChain->GetFramebuffers().size();
+	const auto purpose_number = GPUHandler::GetPurposeNumber();
 	std::vector<std::vector<vk::UniqueCommandPool>> command_pools(command_pool_size);
 	for (size_t idx = 0; idx < command_pool_size; idx++)
-		for (size_t _ = 0; _ < command_pool_size; _++)
+		for (size_t _ = 0; _ < purpose_number; _++)
 			command_pools.at(idx).emplace_back(m_logicalDevice->createCommandPoolUnique(create_info));
 
 	m_commandPoolsDictionary.emplace(vk::QueueFlagBits::eGraphics, std::move(command_pools));
@@ -213,21 +214,23 @@ void hephics::VkInstance::SetCommandPools()
 void hephics::VkInstance::SetCommandBuffers()
 {
 	const auto& graphic_command_pools = m_commandPoolsDictionary.at(vk::QueueFlagBits::eGraphics);
-	const auto& command_pool_size = graphic_command_pools.size();
+	const auto purpose_number = GPUHandler::GetPurposeNumber();
 	decltype(m_graphicCommandBuffers) graphic_command_buffers(graphic_command_pools.size());
 
+	size_t buffer_idx = 0U;
 	for (const auto& graphic_command_pool : graphic_command_pools)
 	{
-		for (size_t idx = 0; idx < command_pool_size; idx++)
+		for (size_t pool_idx = 0; pool_idx < purpose_number; pool_idx++)
 		{
-			vk::CommandBufferAllocateInfo alloc_info(graphic_command_pool.at(idx).get(), vk::CommandBufferLevel::ePrimary, 1);
+			vk::CommandBufferAllocateInfo alloc_info(graphic_command_pool.at(pool_idx).get(), vk::CommandBufferLevel::ePrimary, 1);
 			auto unique_command_buffers = m_logicalDevice->allocateCommandBuffersUnique(alloc_info);
 
 			vk_interface::component::CommandBuffer new_command_buffer;
 			new_command_buffer.SetCommandBuffer(std::move(unique_command_buffers));
-			graphic_command_buffers.at(idx).emplace_back(
+			graphic_command_buffers.at(buffer_idx).emplace_back(
 				std::make_shared<vk_interface::component::CommandBuffer>(std::move(new_command_buffer)));
 		}
+		buffer_idx++;
 	}
 
 	m_graphicCommandBuffers = std::move(graphic_command_buffers);
@@ -239,17 +242,17 @@ hephics::VkInstance::VkInstance(const std::shared_ptr<window::Window>& ptr_windo
 	Initialize(ptr_window);
 }
 
-void hephics::VkInstance::Initialize(const std::shared_ptr<window::Window>& ptr_window)
+void hephics::VkInstance::Initialize(const std::shared_ptr<window::Window>& window)
 {
-	m_windowTitle = ptr_window->GetWindowTitle();
+	m_windowTitle = window->GetWindowTitle();
 	SetInstance(hephics_helper::simple_create_info::get_application_info(m_windowTitle));
 
-	SetWindowSurface(ptr_window);
+	SetWindowSurface(window);
 
 	SetPhysicalDevice();
 	SetLogicalDeviceAndQueue();
 
-	SetSwapChain(ptr_window);
+	SetSwapChain(window);
 	SetSwapChainImageViews();
 	SetSwapChainRenderPass();
 	SetSwapChainFramebuffers();
@@ -269,15 +272,12 @@ void hephics::VkInstance::ResetSwapChain(::GLFWwindow* const ptr_window)
 		::glfwWaitEvents();
 	}
 
-	const auto& window_option = hephics::window::WindowManager::GetWindow(m_windowTitle);
-	if (!window_option.has_value())
-		throw std::runtime_error("failed to create window");
-	const auto& shared_ptr_window = window_option.value();
+	const auto& window = hephics::window::WindowManager::GetWindow(m_windowTitle);
 
 	m_logicalDevice->waitIdle();
 	m_ptrSwapChain->Clear(m_logicalDevice);
 
-	SetSwapChain(shared_ptr_window);
+	SetSwapChain(window);
 	SetSwapChainImageViews();
 	SetSwapChainFramebuffers();
 	SetSwapChainSyncObjects();
@@ -337,4 +337,11 @@ uint32_t hephics::VkInstance::FindMemoryType(const uint32_t& memory_type_filter,
 {
 	return hephics_helper::vk_init::find_memory_type(
 		m_physicalDevice, memory_type_filter, memory_prop_flags);
+}
+
+std::shared_ptr<vk_interface::component::CommandBuffer>& hephics::VkInstance::GetGraphicCommandBuffer(const std::string& purpose)
+{
+	const auto& next_image_id = m_ptrSwapChain->GetNextImageId();
+	const auto purpose_idx = GPUHandler::GetPurposeIdx(purpose);
+	return m_graphicCommandBuffers.at(next_image_id).at(purpose_idx);
 }

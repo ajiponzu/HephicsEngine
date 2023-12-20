@@ -19,6 +19,8 @@ void SampleSceneAnother::Initialize(const std::shared_ptr<hephics::window::Windo
 				case GLFW_KEY_ENTER:
 					m_isChangedScene = true;
 					m_nextSceneName = "first";
+					const auto& gpu_instance = hephics::GPUHandler::GetInstance();
+					Scene::ResetScene(gpu_instance);
 					break;
 				}
 			}

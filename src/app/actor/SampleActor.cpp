@@ -1,6 +1,6 @@
 #include "../SampleApp.hpp"
 
-void SampleActor::LoadData(std::shared_ptr<hephics::VkInstance>& gpu_instance, const size_t& command_buffer_idx)
+void SampleActor::LoadData(std::shared_ptr<hephics::VkInstance>& gpu_instance)
 {
 	const auto& physical_device = gpu_instance->GetPhysicalDevice();
 	const auto& window_surface = gpu_instance->GetWindowSurface();
@@ -42,13 +42,9 @@ void SampleActor::LoadData(std::shared_ptr<hephics::VkInstance>& gpu_instance, c
 		vk::DescriptorBufferInfo buffer_info(
 			uniform_buffers.at(idx)->GetBuffer().get(), 0, position_uniform_buffer_size);
 
-		const auto& texture_option = hephics::asset::AssetManager::GetTexture("room");
-		if (!texture_option.has_value())
-			throw std::runtime_error("texture: not found");
-
-		const auto& ptr_texture = texture_option.value();
-		vk::DescriptorImageInfo image_info(ptr_texture->GetSampler().get(),
-			ptr_texture->GetImage()->GetView().get(), vk::ImageLayout::eShaderReadOnlyOptimal);
+		const auto& texture = hephics::asset::AssetManager::GetTexture("room");
+		vk::DescriptorImageInfo image_info(texture->GetSampler().get(),
+			texture->GetImage()->GetView().get(), vk::ImageLayout::eShaderReadOnlyOptimal);
 
 		vk::WriteDescriptorSet buffer_write_desc_set({}, 0, 0, vk::DescriptorType::eUniformBuffer, nullptr, buffer_info, nullptr);
 		vk::WriteDescriptorSet image_write_desc_set({}, 1, 0, vk::DescriptorType::eCombinedImageSampler, image_info, nullptr, nullptr);
@@ -57,7 +53,7 @@ void SampleActor::LoadData(std::shared_ptr<hephics::VkInstance>& gpu_instance, c
 	}
 }
 
-void SampleActor::SetPipeline(std::shared_ptr<hephics::VkInstance>& gpu_instance, const size_t& command_buffer_idx)
+void SampleActor::SetPipeline(std::shared_ptr<hephics::VkInstance>& gpu_instance)
 {
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& render_pass = gpu_instance->GetSwapChain()->GetRenderPass();
@@ -67,16 +63,8 @@ void SampleActor::SetPipeline(std::shared_ptr<hephics::VkInstance>& gpu_instance
 	vk_interface::component::ShaderProvider::AddShader(logical_device, "vert/sample_shader_3d.vert", "room");
 	vk_interface::component::ShaderProvider::AddShader(logical_device, "frag/sample_shader_3d.frag", "room");
 
-	const auto vert_shader_option = vk_interface::component::ShaderProvider::GetShader("vert", "room");
-	if (!vert_shader_option.has_value())
-		throw std::runtime_error("vertex_shader: not found");
-
-	const auto frag_shader_option = vk_interface::component::ShaderProvider::GetShader("frag", "room");
-	if (!frag_shader_option.has_value())
-		throw std::runtime_error("fragment_shader: not found");
-
-	const auto& vert_shader_module = vert_shader_option.value();
-	const auto& frag_shader_module = frag_shader_option.value();
+	const auto& vert_shader_module = vk_interface::component::ShaderProvider::GetShader("vert", "room");
+	const auto& frag_shader_module = vk_interface::component::ShaderProvider::GetShader("frag", "room");
 
 	vk::PipelineShaderStageCreateInfo vert_shader_stage_info({}, vk::ShaderStageFlagBits::eVertex,
 		vert_shader_module->GetModule().get(), "main");
@@ -124,51 +112,32 @@ void SampleActor::SetPipeline(std::shared_ptr<hephics::VkInstance>& gpu_instance
 	ref_graphic_pipeline->SetPipeline(logical_device, pipeline_info);
 }
 
-void SampleActor::Initialize(std::shared_ptr<hephics::VkInstance>& gpu_instance, const size_t& command_buffer_idx)
+void SampleActor::Initialize(std::shared_ptr<hephics::VkInstance>& gpu_instance)
 {
-	m_components.emplace_back(std::make_shared<MoveComponent>());
+	//m_components.emplace_back(std::make_shared<MoveComponent>());
 
-	LoadData(gpu_instance, command_buffer_idx);
-	SetPipeline(gpu_instance, command_buffer_idx);
+	LoadData(gpu_instance);
+	SetPipeline(gpu_instance);
 
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
-	auto& command_buffer = gpu_instance->GetGraphicCommandBuffer(command_buffer_idx);
 
 	{
-		const auto texture_option = hephics::asset::AssetManager::GetTexture("room");
-		if (!texture_option.has_value())
-			throw std::runtime_error("texture: not found");
-		const auto& texture = texture_option.value();
-
-		const auto cv_mat_option = hephics::asset::AssetManager::GetCvMat("room");
-		if (!cv_mat_option.has_value())
-			throw std::runtime_error("texture: not found");
-		const auto& cv_mat = cv_mat_option.value();
-
-		texture->CopyTexture(gpu_instance, cv_mat, command_buffer_idx);
+		const auto& texture = hephics::asset::AssetManager::GetTexture("room");
+		const auto& cv_mat = hephics::asset::AssetManager::GetCvMat("room");
+		texture->CopyTexture(gpu_instance, cv_mat);
 	}
 
 	{
-		const auto object_3d_option = hephics::asset::AssetManager::GetObject3D("room");
-		if (!object_3d_option.has_value())
-			throw std::runtime_error("object_3d: not found");
-
-		const auto& object_3d = object_3d_option.value();
-		object_3d->CopyVertexBuffer(gpu_instance, command_buffer_idx);
-		object_3d->CopyIndexBuffer(gpu_instance, command_buffer_idx);
+		const auto& object_3d = hephics::asset::AssetManager::GetObject3D("room");
+		object_3d->CopyVertexBuffer(gpu_instance);
+		object_3d->CopyIndexBuffer(gpu_instance);
 	}
 
 	for (auto& component : m_components)
-		component->Initialize(gpu_instance, command_buffer_idx);
+		component->Initialize(gpu_instance);
 }
 
-static bool check_press_key(const std::shared_ptr<hephics::window::Window>& ptr_window, const int& key)
-{
-	const auto glfw_window = ptr_window->GetPtrWindow();
-	return ::glfwGetKey(glfw_window, key) == GLFW_PRESS;
-}
-
-void SampleActor::Update(std::shared_ptr<hephics::VkInstance>& gpu_instance, const size_t& command_buffer_idx)
+void SampleActor::Update(std::shared_ptr<hephics::VkInstance>& gpu_instance)
 {
 	static auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -178,7 +147,7 @@ void SampleActor::Update(std::shared_ptr<hephics::VkInstance>& gpu_instance, con
 
 	/* firstly, component's update method */
 	for (auto& component : m_components)
-		component->Update(this, gpu_instance, command_buffer_idx);
+		component->Update(this, gpu_instance);
 
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& swap_chain = gpu_instance->GetSwapChain();
@@ -197,36 +166,25 @@ void SampleActor::Update(std::shared_ptr<hephics::VkInstance>& gpu_instance, con
 	uniform_buffer->Unmapping(logical_device);
 }
 
-void SampleActor::Render(std::shared_ptr<hephics::VkInstance>& gpu_instance, const size_t& command_buffer_idx)
+void SampleActor::Render(std::shared_ptr<hephics::VkInstance>& gpu_instance)
 {
 	/* firstly, actor's render method */
 	auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& swap_chain = gpu_instance->GetSwapChain();
-	auto& command_buffer = gpu_instance->GetGraphicCommandBuffer(command_buffer_idx)->GetCommandBuffer();
+	auto& render_command_buffer = gpu_instance->GetGraphicCommandBuffer("render")->GetCommandBuffer();
 	const auto& pipeline = m_ptrShaderAttachment->GetGraphicPipeline();
 	const auto& desc_set =
 		m_ptrShaderAttachment->GetDescriptorSet()->GetDescriptorSet(swap_chain->GetCurrentFrameId());
 
-	const auto object_3d_option = hephics::asset::AssetManager::GetObject3D("room");
-	if (!object_3d_option.has_value())
-		throw std::runtime_error("texture: not found");
-	const auto& object_3d = object_3d_option.value();
+	const auto& object_3d = hephics::asset::AssetManager::GetObject3D("room");
 
-	const auto render_pass_info = swap_chain->GetRenderPassBeginInfo();
-
-	const auto [viewport, scissor] = swap_chain->GetViewportAndScissor();
-
-	command_buffer->beginRenderPass(render_pass_info, vk::SubpassContents::eInline);
-	command_buffer->setViewport(0, viewport);
-	command_buffer->setScissor(0, scissor);
-	command_buffer->bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline().get());
-	command_buffer->bindVertexBuffers(0, { object_3d->GetVertexBuffer()->GetBuffer().get() }, { 0 });
-	command_buffer->bindIndexBuffer(object_3d->GetIndexBuffer()->GetBuffer().get(), 0, vk::IndexType::eUint32);
-	command_buffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+	render_command_buffer->bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline().get());
+	render_command_buffer->bindVertexBuffers(0, { object_3d->GetVertexBuffer()->GetBuffer().get() }, { 0 });
+	render_command_buffer->bindIndexBuffer(object_3d->GetIndexBuffer()->GetBuffer().get(), 0, vk::IndexType::eUint32);
+	render_command_buffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
 		pipeline->GetLayout().get(), 0, desc_set.get(), nullptr);
-	command_buffer->drawIndexed(static_cast<uint32_t>(object_3d->GetIndices().size()), 1, 0, 0, 0);
-	command_buffer->endRenderPass();
+	render_command_buffer->drawIndexed(static_cast<uint32_t>(object_3d->GetIndices().size()), 1, 0, 0, 0);
 
 	for (auto& component : m_components)
-		component->Render(gpu_instance, command_buffer_idx);
+		component->Render(gpu_instance);
 }

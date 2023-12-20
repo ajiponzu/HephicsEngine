@@ -19,17 +19,14 @@ void SampleScene::Initialize(const std::shared_ptr<hephics::window::Window>& ptr
 				case GLFW_KEY_ENTER:
 					m_isChangedScene = true;
 					m_nextSceneName = "second";
-
-					const auto gpu_instance_option = hephics::GPUHandler::GetInstance(m_windowTitle);
-					if (!gpu_instance_option.has_value())
-						throw std::runtime_error("failed to find vulkan_instance");
-					auto& gpu_instance = gpu_instance_option.value();
+					const auto& gpu_instance = hephics::GPUHandler::GetInstance();
 					Scene::ResetScene(gpu_instance);
 					break;
 				}
 			}
 		});
 	m_actors.emplace_back(std::make_shared<SampleActor>());
+	//m_actors.emplace_back(std::make_shared<SampleActorAnother>());
 
 	Scene::Initialize(ptr_window);
 }

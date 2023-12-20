@@ -10,48 +10,60 @@ std::unordered_map<std::string, std::shared_ptr<hephics::window::Window>> hephic
 static void input_key_callback(::GLFWwindow* ptr_window, int key, int scancode, int action, int mods)
 {
 	using CallbackType = hephics::window::InputKeyCallback;
-	const auto& callback_wrapped = hephics::window::Window::GetCallback<CallbackType>(ptr_window);
-	if (callback_wrapped)
+	try
 	{
-		const auto& callback_variant = callback_wrapped.value();
+		const auto& callback_variant = hephics::window::Window::GetCallback<CallbackType>(ptr_window);
 		const auto& input_key_func = std::get<CallbackType>(callback_variant);
 		input_key_func(ptr_window, key, scancode, action, mods);
+	}
+	catch (std::exception e)
+	{
+		return;
 	}
 }
 
 static void cursor_position_callback(::GLFWwindow* ptr_window, double xpos, double ypos)
 {
 	using CallbackType = hephics::window::CursorPositionCallback;
-	const auto& callback_wrapped = hephics::window::Window::GetCallback<CallbackType>(ptr_window);
-	if (callback_wrapped)
+	try
 	{
-		const auto& callback_variant = callback_wrapped.value();
+		const auto& callback_variant = hephics::window::Window::GetCallback<CallbackType>(ptr_window);
 		const auto& cursor_position_func = std::get<CallbackType>(callback_variant);
 		cursor_position_func(ptr_window, xpos, ypos);
+	}
+	catch (std::exception e)
+	{
+		return;
 	}
 }
 
 static void mouse_button_callback(::GLFWwindow* ptr_window, int button, int action, int mods)
 {
 	using CallbackType = hephics::window::MouseButtonCallback;
-	const auto& callback_wrapped = hephics::window::Window::GetCallback<CallbackType>(ptr_window);
-	if (callback_wrapped)
+	try
 	{
-		const auto& callback_variant = callback_wrapped.value();
+		const auto& callback_variant = hephics::window::Window::GetCallback<CallbackType>(ptr_window);
 		const auto& mouse_button_func = std::get<CallbackType>(callback_variant);
 		mouse_button_func(ptr_window, button, action, mods);
+	}
+	catch (std::exception e)
+	{
+		return;
 	}
 }
 
 static void mouse_scroll_callback(::GLFWwindow* ptr_window, double xoffset, double yoffset)
 {
 	using CallbackType = hephics::window::MouseScrollCallback;
-	const auto& callback_wrapped = hephics::window::Window::GetCallback<CallbackType>(ptr_window);
-	if (callback_wrapped)
+	try
 	{
-		const auto& callback_variant = callback_wrapped.value();
+		const auto& callback_variant = hephics::window::Window::GetCallback<CallbackType>(ptr_window);
 		const auto& mouse_scroll_func = std::get<CallbackType>(callback_variant);
 		mouse_scroll_func(ptr_window, xoffset, yoffset, 0);
+	}
+	catch (std::exception e)
+	{
+		return;
 	}
 }
 
@@ -59,19 +71,18 @@ static void window_resized_callback(::GLFWwindow* ptr_window, int width, int hei
 {
 	using CallbackType = hephics::window::WindowResizedCallback;
 
-	auto gpu_instance_option =
-		hephics::GPUHandler::GetInstance(hephics::window::Window::GetWindowTitleFromDictionary(ptr_window));
-	if (!gpu_instance_option.has_value())
-		throw std::runtime_error("failed to find vulkan_instance");
-	auto& gpu_instance = gpu_instance_option.value();
+	auto& gpu_instance = hephics::GPUHandler::GetInstance();
 	gpu_instance->ResetSwapChain(ptr_window);
 
-	const auto& callback_wrapped = hephics::window::Window::GetCallback<CallbackType>(ptr_window);
-	if (callback_wrapped)
+	try
 	{
-		const auto& callback_variant = callback_wrapped.value();
+		const auto& callback_variant = hephics::window::Window::GetCallback<CallbackType>(ptr_window);
 		const auto& window_resized_func = std::get<CallbackType>(callback_variant);
 		window_resized_func(ptr_window, width, height);
+	}
+	catch (std::exception e)
+	{
+		return;
 	}
 }
 
@@ -167,16 +178,16 @@ const std::string& hephics::window::Window::GetWindowTitleFromDictionary(const::
 }
 
 template<typename T>
-std::optional<hephics::window::CallbackVariant> hephics::window::Window::GetCallback(const ::GLFWwindow* const ptr_window)
+hephics::window::CallbackVariant hephics::window::Window::GetCallback(const ::GLFWwindow* const ptr_window)
 {
 	if (!s_callbackDictionary.contains(ptr_window))
-		return std::nullopt;
+		throw std::runtime_error("window_callback: not found");
 
 	const auto& callback_dictionary = s_callbackDictionary.at(ptr_window);
 	const auto callback_tag = typeid(T).name();
 
 	if (!callback_dictionary.contains(callback_tag))
-		return std::nullopt;
+		throw std::runtime_error("window_callback: not found");
 
 	return callback_dictionary.at(callback_tag);
 }
@@ -203,11 +214,11 @@ void hephics::window::WindowManager::AddWindow(const WindowInfo& info)
 	s_windowDictionary.emplace(info.title, std::make_shared<Window>(info));
 }
 
-std::optional<std::shared_ptr<hephics::window::Window>>
+const std::shared_ptr<hephics::window::Window>&
 hephics::window::WindowManager::GetWindow(const std::string& window_key)
 {
-	if (s_windowDictionary.contains(window_key))
-		return s_windowDictionary.at(window_key);
+	if (!s_windowDictionary.contains(window_key))
+		throw std::runtime_error("window: not found");
 
-	return std::nullopt;
+	return s_windowDictionary.at(window_key);
 }

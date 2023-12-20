@@ -158,7 +158,7 @@ namespace vk_interface
 			static void AddShader(const vk::UniqueDevice& logical_device,
 				const std::string& shader_code_path, const std::string& shader_key);
 
-			static const std::optional<std::shared_ptr<Shader>> GetShader(
+			static const std::shared_ptr<Shader>& GetShader(
 				const std::string& shader_type_key, const std::string& shader_key);
 
 			static void Reset() { s_shaderDictionary.clear(); }
@@ -409,6 +409,12 @@ namespace vk_interface
 			virtual void EndRecordingCommands();
 
 			virtual void ResetCommands(const vk::CommandBufferResetFlags& reset_flag);
+
+			void BeginRenderPass(const std::shared_ptr<SwapChain>& swap_chain, const vk::SubpassContents& subpass_contents);
+
+			void EndRenderPass();
+
+			void SetViewportAndScissor(const std::shared_ptr<SwapChain>& swap_chain);
 
 			void TransitionImageCommandLayout(const std::shared_ptr<Image>& vk_image, const vk::Format& vk_format,
 				const std::pair<vk::ImageLayout, vk::ImageLayout>& transition_layout_pair);

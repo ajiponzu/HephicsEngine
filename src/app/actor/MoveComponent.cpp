@@ -6,25 +6,21 @@ static bool check_press_key(const std::shared_ptr<hephics::window::Window>& ptr_
 	return ::glfwGetKey(glfw_window, key) == GLFW_PRESS;
 }
 
-void MoveComponent::Initialize(std::shared_ptr<hephics::VkInstance>& gpu_instance, const size_t& comand_buffer_idx)
+void MoveComponent::Initialize(std::shared_ptr<hephics::VkInstance>& gpu_instance)
 {
 }
 
-void MoveComponent::Update(hephics::actor::Actor* const owner,
-	std::shared_ptr<hephics::VkInstance>& gpu_instance, const size_t& comand_buffer_idx)
+void MoveComponent::Update(hephics::actor::Actor* const owner, std::shared_ptr<hephics::VkInstance>& gpu_instance)
 {
 	static constexpr auto VERTICAL_MOVEMENT = 2.0f;
 	static constexpr auto HORIZONTAL_MOVEMENT = 2.0f;
 	static constexpr auto DEPTH_MOVEMENT = 2.0f;
 
 	const auto& cur_window_title = gpu_instance->GetWindowTitle();
-	const auto window_option = hephics::window::WindowManager::GetWindow(cur_window_title);
-	if (!window_option.has_value())
-		throw std::runtime_error("failed to create window");
+	const auto& window = hephics::window::WindowManager::GetWindow(cur_window_title);
 
-	const auto& ptr_window = window_option.value();
 	auto& owner_position = owner->GetPosition();
-	if (check_press_key(ptr_window, GLFW_KEY_A))
+	if (check_press_key(window, GLFW_KEY_A))
 	{
 		glm::mat4 translation_matrix =
 			glm::translate(glm::mat4(1.0f), glm::vec3(-HORIZONTAL_MOVEMENT, 0.0f, 0.0f));
@@ -33,7 +29,7 @@ void MoveComponent::Update(hephics::actor::Actor* const owner,
 		std::cout << "input_key: 'A'" << std::endl;
 #endif
 	}
-	else if (check_press_key(ptr_window, GLFW_KEY_D))
+	else if (check_press_key(window, GLFW_KEY_D))
 	{
 		glm::mat4 translation_matrix =
 			glm::translate(glm::mat4(1.0f), glm::vec3(HORIZONTAL_MOVEMENT, 0.0f, 0.0f));
@@ -42,7 +38,7 @@ void MoveComponent::Update(hephics::actor::Actor* const owner,
 		std::cout << "input_key: 'D'" << std::endl;
 #endif
 	}
-	else if (check_press_key(ptr_window, GLFW_KEY_W))
+	else if (check_press_key(window, GLFW_KEY_W))
 	{
 		glm::mat4 translation_matrix =
 			glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, DEPTH_MOVEMENT));
@@ -51,7 +47,7 @@ void MoveComponent::Update(hephics::actor::Actor* const owner,
 		std::cout << "input_key: 'W'" << std::endl;
 #endif
 	}
-	else if (check_press_key(ptr_window, GLFW_KEY_S))
+	else if (check_press_key(window, GLFW_KEY_S))
 	{
 		glm::mat4 translation_matrix =
 			glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -DEPTH_MOVEMENT));
@@ -60,7 +56,7 @@ void MoveComponent::Update(hephics::actor::Actor* const owner,
 		std::cout << "input_key: 'S'" << std::endl;
 #endif
 	}
-	else if (check_press_key(ptr_window, GLFW_KEY_K))
+	else if (check_press_key(window, GLFW_KEY_K))
 	{
 		glm::mat4 translation_matrix =
 			glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, HORIZONTAL_MOVEMENT, 0.0f));
@@ -69,7 +65,7 @@ void MoveComponent::Update(hephics::actor::Actor* const owner,
 		std::cout << "input_key: 'K'" << std::endl;
 #endif
 	}
-	else if (check_press_key(ptr_window, GLFW_KEY_J))
+	else if (check_press_key(window, GLFW_KEY_J))
 	{
 		glm::mat4 translation_matrix =
 			glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -HORIZONTAL_MOVEMENT, 0.0f));
@@ -80,6 +76,6 @@ void MoveComponent::Update(hephics::actor::Actor* const owner,
 	}
 }
 
-void MoveComponent::Render(std::shared_ptr<hephics::VkInstance>& gpu_instance, const size_t& comand_buffer_idx)
+void MoveComponent::Render(std::shared_ptr<hephics::VkInstance>& gpu_instance)
 {
 }

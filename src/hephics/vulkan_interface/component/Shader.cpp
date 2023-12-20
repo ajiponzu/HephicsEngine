@@ -195,14 +195,14 @@ void vk_interface::component::ShaderProvider::AddShader(const vk::UniqueDevice& 
 	s_shaderDictionary.at(shader_type_str).emplace(shader_key, std::make_shared<Shader>(std::move(shader)));
 }
 
-const std::optional<std::shared_ptr<vk_interface::component::Shader>>
+const std::shared_ptr<vk_interface::component::Shader>&
 vk_interface::component::ShaderProvider::GetShader(const std::string& shader_type_key, const std::string& shader_key)
 {
 	if (!s_shaderDictionary.contains(shader_type_key))
-		return std::nullopt;
+		throw std::runtime_error("shader: not found");
 
-	if (s_shaderDictionary.at(shader_type_key).contains(shader_key))
-		return s_shaderDictionary.at(shader_type_key).at(shader_key);
+	if (!(s_shaderDictionary.at(shader_type_key).contains(shader_key)))
+		throw std::runtime_error("shader: not found");
 
-	return std::nullopt;
+	return s_shaderDictionary.at(shader_type_key).at(shader_key);
 }

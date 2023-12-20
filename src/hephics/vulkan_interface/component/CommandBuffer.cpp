@@ -16,6 +16,26 @@ void vk_interface::component::CommandBuffer::ResetCommands(const vk::CommandBuff
 	m_commandBuffer->reset(reset_flag);
 }
 
+void vk_interface::component::CommandBuffer::BeginRenderPass(const std::shared_ptr<SwapChain>& swap_chain,
+	const vk::SubpassContents& subpass_contents)
+{
+	const auto render_pass_info = swap_chain->GetRenderPassBeginInfo();
+	m_commandBuffer->beginRenderPass(render_pass_info, subpass_contents);
+	SetViewportAndScissor(swap_chain);
+}
+
+void vk_interface::component::CommandBuffer::EndRenderPass()
+{
+	m_commandBuffer->endRenderPass();
+}
+
+void vk_interface::component::CommandBuffer::SetViewportAndScissor(const std::shared_ptr<SwapChain>& swap_chain)
+{
+	const auto [viewport, scissor] = swap_chain->GetViewportAndScissor();
+	m_commandBuffer->setViewport(0, viewport);
+	m_commandBuffer->setScissor(0, scissor);
+}
+
 void vk_interface::component::CommandBuffer::TransitionImageCommandLayout(const std::shared_ptr<Image>& vk_image,
 	const vk::Format& vk_format, const std::pair<vk::ImageLayout, vk::ImageLayout>& transition_layout_pair)
 {

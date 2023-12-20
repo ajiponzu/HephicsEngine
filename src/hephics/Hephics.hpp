@@ -55,7 +55,7 @@ namespace hephics
 			static const std::string& GetWindowTitleFromDictionary(const ::GLFWwindow* const ptr_window);
 
 			template<typename T>
-			static std::optional<CallbackVariant> GetCallback(const ::GLFWwindow* const ptr_window);
+			static CallbackVariant GetCallback(const ::GLFWwindow* const ptr_window);
 		};
 
 		class WindowManager
@@ -72,7 +72,7 @@ namespace hephics
 
 			static void AddWindow(const WindowInfo& info);
 
-			static std::optional<std::shared_ptr<Window>> GetWindow(const std::string& window_key);
+			static const std::shared_ptr<Window>& GetWindow(const std::string& window_key);
 		};
 	};
 
@@ -85,11 +85,11 @@ namespace hephics
 		std::vector<std::vector<std::shared_ptr<vk_interface::component::CommandBuffer>>> m_graphicCommandBuffers;
 
 		virtual void SetInstance(const vk::ApplicationInfo& app_info);
-		virtual void SetWindowSurface(const std::shared_ptr<window::Window>& ptr_window);
+		virtual void SetWindowSurface(const std::shared_ptr<window::Window>& window);
 		virtual void SetPhysicalDevice();
 		virtual void SetLogicalDeviceAndQueue();
 
-		virtual void SetSwapChain(const std::shared_ptr<window::Window>& ptr_window);
+		virtual void SetSwapChain(const std::shared_ptr<window::Window>& window);
 		virtual void SetSwapChainImageViews();
 		virtual void SetSwapChainRenderPass();
 		virtual void SetSwapChainFramebuffers();
@@ -101,15 +101,15 @@ namespace hephics
 	public:
 
 		VkInstance() = default;
-		VkInstance(const std::shared_ptr<window::Window>& ptr_window);
+		VkInstance(const std::shared_ptr<window::Window>& window);
 		~VkInstance()
 		{
 			if (m_logicalDevice)
 				m_logicalDevice->waitIdle();
 		}
 
-		void Initialize(const std::shared_ptr<window::Window>& ptr_window);
-		void ResetSwapChain(::GLFWwindow* const ptr_window);
+		void Initialize(const std::shared_ptr<window::Window>& window);
+		void ResetSwapChain(::GLFWwindow* const window);
 
 		void SubmitCopyGraphicResource(const vk::SubmitInfo& submit_info);
 
@@ -127,10 +127,7 @@ namespace hephics
 
 		const auto& GetWindowTitle() const { return m_windowTitle; }
 		auto& GetGraphicCommandBuffers() { return m_graphicCommandBuffers.at(m_ptrSwapChain->GetNextImageId()); }
-		auto& GetGraphicCommandBuffer(const size_t& command_buffer_idx)
-		{
-			return GetGraphicCommandBuffers().at(command_buffer_idx);
-		}
+		std::shared_ptr<vk_interface::component::CommandBuffer>& GetGraphicCommandBuffer(const std::string& purpose);
 	};
 
 	namespace asset
@@ -170,7 +167,7 @@ namespace hephics
 			const auto& GetSampler() const { return m_sampler; }
 
 			void CopyTexture(const std::shared_ptr<VkInstance>& gpu_instance,
-				const std::shared_ptr<cv::Mat>& cv_mat, const size_t& command_buffer_idx);
+				const std::shared_ptr<cv::Mat>& cv_mat);
 		};
 
 		struct VertexData
@@ -223,8 +220,8 @@ namespace hephics
 			const auto& GetVertexBuffer() const { return m_ptrVertexBuffer; }
 			const auto& GetIndexBuffer() const { return m_ptrIndexBuffer; }
 
-			void CopyVertexBuffer(const std::shared_ptr<VkInstance>& gpu_instance, const size_t& command_buffer_idx) const;
-			void CopyIndexBuffer(const std::shared_ptr<VkInstance>& gpu_instance, const size_t& command_buffer_idx) const;
+			void CopyVertexBuffer(const std::shared_ptr<VkInstance>& gpu_instance) const;
+			void CopyIndexBuffer(const std::shared_ptr<VkInstance>& gpu_instance) const;
 		};
 
 		class Texture3D : public Asset3D
@@ -302,11 +299,11 @@ namespace hephics
 			static void RegistTexture3D(const std::shared_ptr<VkInstance>& gpu_instance,
 				const Texture3D& texture_3d, const std::string& asset_key);
 
-			static const std::optional<std::shared_ptr<cv::Mat>> GetCvMat(const std::string& asset_key);
-			static const std::optional<std::shared_ptr<Texture>> GetTexture(const std::string& asset_key);
-			static const std::optional<std::shared_ptr<Texture3D>> GetTexture3D(const std::string& asset_key);
-			static const std::optional<std::shared_ptr<Object3D>> GetObject3D(const std::string& asset_key);
-			static const std::optional<std::shared_ptr<Fbx3D>> GetFbx3D(const std::string& asset_key);
+			static const std::shared_ptr<cv::Mat>& GetCvMat(const std::string& asset_key);
+			static const std::shared_ptr<Texture>& GetTexture(const std::string& asset_key);
+			static const std::shared_ptr<Texture3D>& GetTexture3D(const std::string& asset_key);
+			static const std::shared_ptr<Object3D>& GetObject3D(const std::string& asset_key);
+			static const std::shared_ptr<Fbx3D>& GetFbx3D(const std::string& asset_key);
 
 			static void Reset() { s_assetDictionaries.clear(); }
 		};
@@ -348,8 +345,8 @@ namespace hephics
 			std::shared_ptr<ShaderAttachment> m_ptrShaderAttachment;
 			bool m_visible = false;
 
-			virtual void LoadData(std::shared_ptr<VkInstance>& gpu_instance, const size_t& command_buffer_idx) {}
-			virtual void SetPipeline(std::shared_ptr<VkInstance>& gpu_instance, const size_t& command_buffer_idx) {}
+			virtual void LoadData(std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void SetPipeline(std::shared_ptr<VkInstance>& gpu_instance) {}
 
 		public:
 			Component() : m_visible(true)
@@ -361,9 +358,9 @@ namespace hephics
 			void SetVisible(const bool& is_visible) { m_visible = is_visible; }
 			const auto& IsVisible() const { return m_visible; }
 
-			virtual void Initialize(std::shared_ptr<VkInstance>& gpu_instance, const size_t& command_buffer_idx) {}
-			virtual void Update(class Actor* const owner, std::shared_ptr<VkInstance>& gpu_instance, const size_t& command_buffer_idx) {}
-			virtual void Render(std::shared_ptr<VkInstance>& gpu_instance, const size_t& command_buffer_idx) {}
+			virtual void Initialize(std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void Update(class Actor* const owner, std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void Render(std::shared_ptr<VkInstance>& gpu_instance) {}
 		};
 
 		class Actor
@@ -374,8 +371,8 @@ namespace hephics
 			std::shared_ptr<Position> m_ptrPosition;
 			bool m_visible = false;
 
-			virtual void LoadData(std::shared_ptr<VkInstance>& gpu_instance, const size_t& command_buffer_idx) {}
-			virtual void SetPipeline(std::shared_ptr<VkInstance>& gpu_instance, const size_t& command_buffer_idx) {}
+			virtual void LoadData(std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void SetPipeline(std::shared_ptr<VkInstance>& gpu_instance) {}
 
 		public:
 			Actor() : m_visible(true)
@@ -388,9 +385,9 @@ namespace hephics
 			void SetVisible(const bool& is_visible) { m_visible = is_visible; }
 			const auto& IsVisible() const { return m_visible; }
 
-			virtual void Initialize(std::shared_ptr<VkInstance>& gpu_instance, const size_t& command_buffer_idx) {}
-			virtual void Update(std::shared_ptr<VkInstance>& gpu_instance, const size_t& command_buffer_idx) {}
-			virtual void Render(std::shared_ptr<VkInstance>& gpu_instance, const size_t& command_buffer_idx) {}
+			virtual void Initialize(std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void Update(std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void Render(std::shared_ptr<VkInstance>& gpu_instance) {}
 
 			auto& GetPosition() { return m_ptrPosition; }
 		};
@@ -446,7 +443,8 @@ namespace hephics
 	class GPUHandler
 	{
 	private:
-		static std::unordered_map<std::string, std::shared_ptr<VkInstance>> s_ptrVkInstanceDictionary;
+		static std::unordered_map<std::string, size_t> s_graphicPurposeDictionary;
+		static std::shared_ptr<VkInstance> s_ptrGPUInstance;
 
 		GPUHandler() = delete;
 		~GPUHandler() = delete;
@@ -454,18 +452,20 @@ namespace hephics
 	public:
 		static void Shutdown()
 		{
-			for (const auto& [_, gpu_handler] : s_ptrVkInstanceDictionary)
-			{
-				Scene::ResetScene(gpu_handler);
-				break;
-			}
-
-			s_ptrVkInstanceDictionary.clear();
+			s_graphicPurposeDictionary.clear();
+			Scene::ResetScene(s_ptrGPUInstance);
+			s_ptrGPUInstance = nullptr;
 		}
+
+		static void AddPurpose(const std::vector<std::string>& purpose_list);
 
 		static void AddInstance(const std::shared_ptr<window::Window>& ptr_window);
 
-		static std::optional<std::shared_ptr<VkInstance>> GetInstance(const std::string& instance_key);
+		static auto& GetInstance() { return s_ptrGPUInstance; }
+
+		static const size_t& GetPurposeIdx(const std::string& purpose);
+
+		static const size_t GetPurposeNumber();
 	};
 
 	class Engine
@@ -478,6 +478,7 @@ namespace hephics
 		{
 			ptr_app->Initialize();
 			ptr_app->Run();
+			ptr_app = nullptr;
 		}
 
 		static void Shutdown()
