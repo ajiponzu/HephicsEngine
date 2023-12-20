@@ -1,0 +1,149 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{f7d24c7c-ff87-4019-9377-a39889abab2b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pch">
+      <UniqueIdentifier>{513b2e55-1ad4-4ad9-8c9e-7f6e2c8d1889}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets">
+      <UniqueIdentifier>{885838b8-ded9-48b8-a519-93b79ca2b74a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\shader">
+      <UniqueIdentifier>{8eafb623-bb6b-456a-ac7e-e28652aac888}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\app">
+      <UniqueIdentifier>{d17c2514-69a6-4dee-b7ed-cd123533694c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\app\actor">
+      <UniqueIdentifier>{97a2deba-b3fb-456d-93f5-39dbc1008674}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\app\scene">
+      <UniqueIdentifier>{2264cefa-e1b2-43f9-90ed-c3b3152cf407}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\hephics">
+      <UniqueIdentifier>{88dfed7b-99ab-4a73-b3b0-e14079dde756}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\hephics\component">
+      <UniqueIdentifier>{5378ecce-949d-4240-ba75-8c2e2c506e9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\hephics\vk_interface">
+      <UniqueIdentifier>{4c9e28d1-47c6-41b3-a967-fa54aebd2bc4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\hephics\vulkan_helper">
+      <UniqueIdentifier>{b5ddeaf3-754b-4302-924a-df2427489312}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\shader\frag">
+      <UniqueIdentifier>{c748aedf-d3a6-4f94-af49-c6af768e7e84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\shader\vert">
+      <UniqueIdentifier>{36ad067d-a34f-4268-b770-c2090710c826}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\hephics\vk_interface\component">
+      <UniqueIdentifier>{58d2e582-86fb-4f08-87c2-8866305985c7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\app\actor\MoveComponent.cpp">
+      <Filter>src\app\actor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\app\actor\SampleActor.cpp">
+      <Filter>src\app\actor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\app\actor\SampleActorAnother.cpp">
+      <Filter>src\app\actor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\app\scene\SampleScene.cpp">
+      <Filter>src\app\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\app\scene\SampleSceneAnother.cpp">
+      <Filter>src\app\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\app\SampleApp.cpp">
+      <Filter>src\app</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hephics\component\Asset.cpp">
+      <Filter>src\hephics\component</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hephics\component\GPUHandler.cpp">
+      <Filter>src\hephics\component</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hephics\component\Scene.cpp">
+      <Filter>src\hephics\component</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hephics\component\VkInstance.cpp">
+      <Filter>src\hephics\component</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hephics\component\Window.cpp">
+      <Filter>src\hephics\component</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hephics\vulkan_helper\CreateInfo.cpp">
+      <Filter>src\hephics\vulkan_helper</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hephics\vulkan_helper\VkInit.cpp">
+      <Filter>src\hephics\vulkan_helper</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hephics\vulkan_interface\component\Buffer.cpp">
+      <Filter>src\hephics\vk_interface\component</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hephics\vulkan_interface\component\CommandBuffer.cpp">
+      <Filter>src\hephics\vk_interface\component</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hephics\vulkan_interface\component\DescriptorSet.cpp">
+      <Filter>src\hephics\vk_interface\component</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hephics\vulkan_interface\component\Fence.cpp">
+      <Filter>src\hephics\vk_interface\component</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hephics\vulkan_interface\component\Image.cpp">
+      <Filter>src\hephics\vk_interface\component</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hephics\vulkan_interface\component\Pipeline.cpp">
+      <Filter>src\hephics\vk_interface\component</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hephics\vulkan_interface\component\Shader.cpp">
+      <Filter>src\hephics\vk_interface\component</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hephics\vulkan_interface\component\SwapChain.cpp">
+      <Filter>src\hephics\vk_interface\component</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="pch\stdafx.cpp">
+      <Filter>pch</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\app\SampleApp.hpp">
+      <Filter>src\app</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hephics\Hephics.hpp">
+      <Filter>src\hephics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hephics\HephicsHelper.hpp">
+      <Filter>src\hephics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hephics\vulkan_interface\Interface.hpp">
+      <Filter>src\hephics\vk_interface</Filter>
+    </ClInclude>
+    <ClInclude Include="pch\stdafx.h">
+      <Filter>pch</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="assets\shader\vert\sample_shader.vert">
+      <Filter>assets\shader\vert</Filter>
+    </None>
+    <None Include="assets\shader\vert\sample_shader_3d.vert">
+      <Filter>assets\shader\vert</Filter>
+    </None>
+    <None Include="assets\shader\frag\sample_shader.frag">
+      <Filter>assets\shader\frag</Filter>
+    </None>
+    <None Include="assets\shader\frag\sample_shader_3d.frag">
+      <Filter>assets\shader\frag</Filter>
+    </None>
+  </ItemGroup>
+</Project>
