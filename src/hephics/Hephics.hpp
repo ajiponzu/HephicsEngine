@@ -137,6 +137,8 @@ namespace hephics
 			vk::UniqueSampler m_sampler;
 			uint32_t m_miplevel = 0U;
 
+			void GenerateMipmaps(const std::shared_ptr<VkInstance>& gpu_instance, uint32_t width, uint32_t height);
+
 		public:
 			Texture()
 			{
@@ -165,8 +167,10 @@ namespace hephics
 
 			const auto& GetSampler() const { return m_sampler; }
 
-			void CopyTexture(const std::shared_ptr<VkInstance>& gpu_instance,
+			void CopyTexture(std::shared_ptr<VkInstance>& gpu_instance,
 				const std::shared_ptr<cv::Mat>& cv_mat);
+
+			const auto& GetMiplevel() const { return m_miplevel; }
 		};
 
 		struct VertexData
@@ -219,8 +223,8 @@ namespace hephics
 			const auto& GetVertexBuffer() const { return m_ptrVertexBuffer; }
 			const auto& GetIndexBuffer() const { return m_ptrIndexBuffer; }
 
-			void CopyVertexBuffer(const std::shared_ptr<VkInstance>& gpu_instance) const;
-			void CopyIndexBuffer(const std::shared_ptr<VkInstance>& gpu_instance) const;
+			void CopyVertexBuffer(std::shared_ptr<VkInstance>& gpu_instance) const;
+			void CopyIndexBuffer(std::shared_ptr<VkInstance>& gpu_instance) const;
 		};
 
 		class Texture3D : public Asset3D
@@ -288,6 +292,7 @@ namespace hephics
 
 		public:
 			static void RegistCvMat(const std::string& asset_path, const std::string& asset_key);
+			static void RegistCvMat(const std::string& asset_key, const cv::Mat& cv_mat);
 			static void RegistObject3D(const std::shared_ptr<VkInstance>& gpu_instance,
 				const std::string& asset_path, const std::string& asset_key);
 			static void RegistFbx3D(const std::shared_ptr<VkInstance>& gpu_instance,
@@ -295,6 +300,8 @@ namespace hephics
 
 			static void RegistTexture(const std::shared_ptr<VkInstance>& gpu_instance,
 				const std::string& asset_path, const std::string& asset_key);
+			static void RegistTexture(const std::shared_ptr<VkInstance>& gpu_instance,
+				const std::string& asset_key, const cv::Mat& cv_mat);
 			static void RegistTexture3D(const std::shared_ptr<VkInstance>& gpu_instance,
 				const Texture3D& texture_3d, const std::string& asset_key);
 

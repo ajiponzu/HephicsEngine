@@ -14,6 +14,77 @@ template<> struct std::hash<hephics::asset::VertexData>
 std::unordered_map<std::string, std::unordered_map<std::string, hephics::asset::AssetVariant>>
 hephics::asset::AssetManager::s_assetDictionaries;
 
+void hephics::asset::Texture::GenerateMipmaps(const std::shared_ptr<VkInstance>& gpu_instance, uint32_t width, uint32_t height)
+{
+	auto& command_buffer = gpu_instance->GetGraphicCommandBuffer("copy")->GetCommandBuffer();
+
+	vk::ImageMemoryBarrier barrier;
+	barrier.setImage(m_ptrImage->GetImage().get());
+	barrier.srcQueueFamilyIndex = 0U;
+	barrier.dstQueueFamilyIndex = 0U;
+
+	int32_t mipWidth = width;
+	int32_t mipHeight = height;
+
+	for (uint32_t i = 1; i < m_miplevel; i++)
+	{
+		barrier.subresourceRange.baseMipLevel = i - 1;
+		barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+		barrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+		barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+
+		command_buffer->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer,
+			vk::DependencyFlags(), nullptr, nullptr, barrier);
+
+		vk::ImageBlit blit;
+		blit.srcOffsets.at(0) = vk::Offset3D(0, 0, 0);
+		blit.srcOffsets.at(1) = vk::Offset3D(mipWidth, mipHeight, 1);
+		blit.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+		blit.srcSubresource.mipLevel = i - 1;
+		blit.srcSubresource.baseArrayLayer = 0;
+		blit.srcSubresource.layerCount = 1;
+
+		blit.dstOffsets.at(0) = vk::Offset3D(0, 0, 0);
+		blit.dstOffsets.at(1) = vk::Offset3D(
+			std::max(1, mipWidth / 2),
+			std::max(1, mipHeight / 2),
+			1);
+		blit.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+		blit.dstSubresource.mipLevel = i;
+		blit.dstSubresource.baseArrayLayer = 0;
+		blit.dstSubresource.layerCount = 1;
+
+		command_buffer->blitImage(
+			m_ptrImage->GetImage().get(), vk::ImageLayout::eTransferSrcOptimal,
+			m_ptrImage->GetImage().get(), vk::ImageLayout::eTransferDstOptimal,
+			1, &blit,
+			vk::Filter::eLinear);
+
+		barrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+		barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+		command_buffer->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader,
+			vk::DependencyFlags(), nullptr, nullptr, barrier);
+
+		if (mipWidth > 1)
+			mipWidth /= 2;
+		if (mipHeight > 1)
+			mipHeight /= 2;
+	}
+
+	barrier.subresourceRange.baseMipLevel = m_miplevel - 1;
+	barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+	barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+	barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+	command_buffer->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader,
+		vk::DependencyFlags(), nullptr, nullptr, barrier);
+}
+
 hephics::asset::Texture::Texture(const std::shared_ptr<VkInstance>& gpu_instance,
 	const std::string& path, const std::string& cv_mat_key)
 {
@@ -21,7 +92,7 @@ hephics::asset::Texture::Texture(const std::shared_ptr<VkInstance>& gpu_instance
 	const auto& cv_mat = hephics::asset::AssetManager::GetCvMat(cv_mat_key);
 	const auto& cv_mat_size = cv_mat->size();
 	//m_miplevel = static_cast<uint32_t>(std::floor(std::log2(std::max(cv_mat_size.width, cv_mat_size.height)))) + 1U;
-	m_miplevel = 1;
+	m_miplevel = 2U;
 
 	const auto& physical_device = gpu_instance->GetPhysicalDevice();
 	const auto& window_surface = gpu_instance->GetWindowSurface();
@@ -58,7 +129,7 @@ hephics::asset::Texture::Texture(const std::shared_ptr<VkInstance>& gpu_instance
 {
 	const auto& cv_mat_size = cv_mat->size();
 	//m_miplevel = static_cast<uint32_t>(std::floor(std::log2(std::max(cv_mat_size.width, cv_mat_size.height)))) + 1U;
-	m_miplevel = 1;
+	m_miplevel = 2U;
 
 	const auto& physical_device = gpu_instance->GetPhysicalDevice();
 	const auto& window_surface = gpu_instance->GetWindowSurface();
@@ -95,12 +166,17 @@ void hephics::asset::Texture::SetSampler(const vk::UniqueDevice& logical_device,
 	const vk::SamplerCreateInfo& create_info)
 {
 	vk::SamplerCreateInfo new_create_info = create_info;
-	//create_info.mip
-	//m_miplevel = ;
+	if (m_miplevel > 1)
+	{
+		new_create_info.setMipmapMode(vk::SamplerMipmapMode::eLinear);
+		new_create_info.setMinLod(0.0f);
+		new_create_info.setMaxLod(static_cast<float_t>(m_miplevel) / 2);
+		new_create_info.setMipLodBias(0.0f);
+	}
 	m_sampler = logical_device->createSamplerUnique(new_create_info);
 }
 
-void hephics::asset::Texture::CopyTexture(const std::shared_ptr<VkInstance>& gpu_instance, const std::shared_ptr<cv::Mat>& cv_mat)
+void hephics::asset::Texture::CopyTexture(std::shared_ptr<VkInstance>& gpu_instance, const std::shared_ptr<cv::Mat>& cv_mat)
 {
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	auto& command_buffer = gpu_instance->GetGraphicCommandBuffer("copy");
@@ -117,16 +193,17 @@ void hephics::asset::Texture::CopyTexture(const std::shared_ptr<VkInstance>& gpu
 		{ vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal }, m_miplevel);
 	command_buffer->CopyTexture(staging_buffer, GetImage(),
 		vk::Extent2D{ static_cast<uint32_t>(cv_mat_size.width), static_cast<uint32_t>(cv_mat_size.height) });
-	if (m_miplevel <= 1)
-		command_buffer->TransitionImageCommandLayout(GetImage(), vk::Format::eR8G8B8A8Srgb,
-			{ vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal }, m_miplevel);
+	std::cout << m_miplevel << std::endl;
+	if (m_miplevel > 1)
+		GenerateMipmaps(gpu_instance, cv_mat_size.width, cv_mat_size.height);
+	command_buffer->TransitionImageCommandLayout(GetImage(), vk::Format::eR8G8B8A8Srgb,
+		{ vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal }, m_miplevel);
 
 	auto& staging_buffers = hephics::Scene::GetStagingBuffers();
 	staging_buffers.emplace_back(std::move(staging_buffer));
 }
 
-void hephics::asset::Asset3D::CopyVertexBuffer(
-	const std::shared_ptr<VkInstance>& gpu_instance) const
+void hephics::asset::Asset3D::CopyVertexBuffer(std::shared_ptr<VkInstance>& gpu_instance) const
 {
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	auto& command_buffer = gpu_instance->GetGraphicCommandBuffer("copy");
@@ -143,7 +220,7 @@ void hephics::asset::Asset3D::CopyVertexBuffer(
 	staging_buffers.emplace_back(std::move(staging_buffer));
 }
 
-void hephics::asset::Asset3D::CopyIndexBuffer(const std::shared_ptr<VkInstance>& gpu_instance) const
+void hephics::asset::Asset3D::CopyIndexBuffer(std::shared_ptr<VkInstance>& gpu_instance) const
 {
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	auto& command_buffer = gpu_instance->GetGraphicCommandBuffer("copy");
@@ -240,6 +317,17 @@ void hephics::asset::AssetManager::RegistCvMat(const std::string& asset_path, co
 	s_assetDictionaries.at("cv_mat").emplace(asset_key, std::make_shared<cv::Mat>(img));
 }
 
+void hephics::asset::AssetManager::RegistCvMat(const std::string& asset_key, const cv::Mat& cv_mat)
+{
+	if (!s_assetDictionaries.contains("cv_mat"))
+		s_assetDictionaries["cv_mat"] = {};
+
+	if (s_assetDictionaries.at("cv_mat").contains(asset_key))
+		return;
+
+	s_assetDictionaries.at("cv_mat").emplace(asset_key, std::make_shared<cv::Mat>(cv_mat));
+}
+
 void hephics::asset::AssetManager::RegistObject3D(const std::shared_ptr<VkInstance>& gpu_instance,
 	const std::string& asset_path, const std::string& asset_key)
 {
@@ -276,6 +364,19 @@ void hephics::asset::AssetManager::RegistTexture(const std::shared_ptr<VkInstanc
 		return;
 
 	s_assetDictionaries.at("texture").emplace(asset_key, std::make_shared<Texture>(gpu_instance, asset_path, asset_key));
+}
+
+void hephics::asset::AssetManager::RegistTexture(const std::shared_ptr<VkInstance>& gpu_instance,
+	const std::string& asset_key, const cv::Mat& cv_mat)
+{
+	if (!s_assetDictionaries.contains("texture"))
+		s_assetDictionaries["texture"] = {};
+
+	if (s_assetDictionaries.at("texture").contains(asset_key))
+		return;
+
+	RegistCvMat(asset_key, cv_mat);
+	s_assetDictionaries.at("texture").emplace(asset_key, std::make_shared<Texture>(gpu_instance, std::make_shared<cv::Mat>(cv_mat)));
 }
 
 void hephics::asset::AssetManager::RegistTexture3D(const std::shared_ptr<VkInstance>& gpu_instance,

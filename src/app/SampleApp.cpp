@@ -26,7 +26,6 @@ void SampleApp::Run()
 	while (m_ptrCurrentScene->IsContinuous() &&
 		!(::glfwWindowShouldClose(window->GetPtrWindow())))
 	{
-		::glfwPollEvents();
 		if (m_ptrCurrentScene->IsChangedScene())
 		{
 			const auto& next_scene_name = m_ptrCurrentScene->GetNextSceneName();
@@ -40,5 +39,7 @@ void SampleApp::Run()
 
 		m_ptrCurrentScene->Update();
 		m_ptrCurrentScene->Render();
+
+		::glfwPollEvents();
 	}
 }

@@ -14,6 +14,7 @@ void SampleScene::Initialize(const std::shared_ptr<hephics::window::Window>& ptr
 				{
 				case GLFW_KEY_ESCAPE:
 					m_isContinuous = false;
+					Scene::ResetScene();
 					::glfwSetWindowShouldClose(window, GLFW_TRUE);
 					break;
 				case GLFW_KEY_ENTER:
