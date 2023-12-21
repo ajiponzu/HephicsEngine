@@ -34,6 +34,7 @@ namespace hephics
 			void SetCallbacks();
 
 		protected:
+			friend class WindowManager;
 			::GLFWwindow* m_ptrWindow;
 			WindowInfo m_info;
 
@@ -45,6 +46,8 @@ namespace hephics
 			::GLFWwindow* const GetPtrWindow() const { return m_ptrWindow; }
 			::GLFWwindow* GetPtrWindow() { return m_ptrWindow; }
 			const std::string& GetWindowTitle() const { return m_info.title; }
+			const auto& GetWidth() const { return m_info.width; }
+			const auto& GetHeight() const { return m_info.height; }
 
 			void SetCallback(InputKeyCallback&& callback) const;
 			void SetCallback(CursorPositionCallback&& callback) const;
@@ -62,6 +65,7 @@ namespace hephics
 		{
 		private:
 			static std::unordered_map<std::string, std::shared_ptr<Window>> s_windowDictionary;
+			static glm::vec2 s_cursorPosition;
 
 			WindowManager() = delete;
 			~WindowManager() = delete;
@@ -73,6 +77,9 @@ namespace hephics
 			static void AddWindow(const WindowInfo& info);
 
 			static const std::shared_ptr<Window>& GetWindow(const std::string& window_key);
+			static void SetWindowSize(const std::string& window_key, const int32_t& width, const int32_t& height);
+			static void SetCursorPosition(const double& pos_x, const double& pos_y);
+			static const glm::vec2& GetCursorPosition(const std::string& window_key);
 		};
 	};
 

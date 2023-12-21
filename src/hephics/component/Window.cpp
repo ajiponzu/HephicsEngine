@@ -7,6 +7,8 @@ std::unordered_map<const ::GLFWwindow*, std::string> hephics::window::Window::s_
 
 std::unordered_map<std::string, std::shared_ptr<hephics::window::Window>> hephics::window::WindowManager::s_windowDictionary;
 
+glm::vec2 hephics::window::WindowManager::s_cursorPosition;
+
 static void input_key_callback(::GLFWwindow* ptr_window, int key, int scancode, int action, int mods)
 {
 	using CallbackType = hephics::window::InputKeyCallback;
@@ -25,6 +27,7 @@ static void input_key_callback(::GLFWwindow* ptr_window, int key, int scancode, 
 static void cursor_position_callback(::GLFWwindow* ptr_window, double xpos, double ypos)
 {
 	using CallbackType = hephics::window::CursorPositionCallback;
+	hephics::window::WindowManager::SetCursorPosition(xpos, ypos);
 	try
 	{
 		const auto& callback_variant = hephics::window::Window::GetCallback<CallbackType>(ptr_window);
@@ -70,8 +73,8 @@ static void mouse_scroll_callback(::GLFWwindow* ptr_window, double xoffset, doub
 static void window_resized_callback(::GLFWwindow* ptr_window, int width, int height)
 {
 	using CallbackType = hephics::window::WindowResizedCallback;
-
 	auto& gpu_instance = hephics::GPUHandler::GetInstance();
+	hephics::window::WindowManager::SetWindowSize(gpu_instance->GetWindowTitle(), width, height);
 	gpu_instance->ResetSwapChain(ptr_window);
 
 	try
@@ -221,4 +224,26 @@ hephics::window::WindowManager::GetWindow(const std::string& window_key)
 		throw std::runtime_error("window: not found");
 
 	return s_windowDictionary.at(window_key);
+}
+
+const glm::vec2& hephics::window::WindowManager::GetCursorPosition(const std::string& window_key)
+{
+	return s_cursorPosition;
+}
+
+void hephics::window::WindowManager::SetCursorPosition(const double& pos_x, const double& pos_y)
+{
+	s_cursorPosition[0] = static_cast<float_t>(pos_x);
+	s_cursorPosition[1] = static_cast<float_t>(pos_y);
+}
+
+void hephics::window::WindowManager::SetWindowSize(
+	const std::string& window_key, const int32_t& width, const int32_t& height)
+{
+	if (!s_windowDictionary.contains(window_key))
+		throw std::runtime_error("window: not found");
+
+	auto& window = s_windowDictionary.at(window_key);
+	window->m_info.width = width;
+	window->m_info.height = height;
 }
