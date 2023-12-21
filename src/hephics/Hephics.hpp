@@ -117,8 +117,6 @@ namespace hephics
 
 		void PresentFrame(const vk::PresentInfoKHR& present_info);
 
-		virtual vk_interface::component::QueueFamilyIndices FindQueueFamilies() const;
-		virtual vk_interface::component::SwapChainSupportDetails QuerySwapChainSupport() const;
 		virtual vk::Format FindSupportedFormat(const std::vector<vk::Format>& candidates,
 			const vk::ImageTiling& tilling, const vk::FormatFeatureFlags& features) const;
 		virtual vk::Format FindDepthFormat() const;
@@ -421,7 +419,7 @@ namespace hephics
 		const auto& GetWindowTitle() const { return m_windowTitle; }
 		static auto& GetStagingBuffers() { return s_staging_buffers; }
 
-		static void ResetScene(const std::shared_ptr<VkInstance>& gpu_instance);
+		static void ResetScene();
 	};
 
 	class App
@@ -453,7 +451,7 @@ namespace hephics
 		static void Shutdown()
 		{
 			s_graphicPurposeDictionary.clear();
-			Scene::ResetScene(s_ptrGPUInstance);
+			Scene::ResetScene();
 			s_ptrGPUInstance = nullptr;
 		}
 
@@ -462,6 +460,8 @@ namespace hephics
 		static void AddInstance(const std::shared_ptr<window::Window>& ptr_window);
 
 		static auto& GetInstance() { return s_ptrGPUInstance; }
+
+		static void WaitIdle() { s_ptrGPUInstance->GetLogicalDevice()->waitIdle(); }
 
 		static const size_t& GetPurposeIdx(const std::string& purpose);
 
@@ -478,6 +478,8 @@ namespace hephics
 		{
 			ptr_app->Initialize();
 			ptr_app->Run();
+
+			GPUHandler::WaitIdle();
 			ptr_app = nullptr;
 		}
 

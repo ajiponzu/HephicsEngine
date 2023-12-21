@@ -23,7 +23,7 @@ hephics::asset::Texture::Texture(const std::shared_ptr<VkInstance>& gpu_instance
 	const auto& physical_device = gpu_instance->GetPhysicalDevice();
 	const auto& window_surface = gpu_instance->GetWindowSurface();
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
-	const auto queue_family_array = gpu_instance->FindQueueFamilies().get_families_array();
+	const auto& queue_family_array = gpu_instance->GetQueueFamilyIndices().get_families_array();
 
 	m_ptrImage = std::make_shared<vk_interface::component::Image>();
 	m_ptrImage->SetImage(logical_device,
@@ -54,7 +54,7 @@ hephics::asset::Texture::Texture(const std::shared_ptr<VkInstance>& gpu_instance
 	const auto& physical_device = gpu_instance->GetPhysicalDevice();
 	const auto& window_surface = gpu_instance->GetWindowSurface();
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
-	const auto queue_family_array = gpu_instance->FindQueueFamilies().get_families_array();
+	const auto& queue_family_array = gpu_instance->GetQueueFamilyIndices().get_families_array();
 
 	auto texture = std::make_shared<hephics::asset::Texture>();
 	m_ptrImage->SetImage(logical_device,

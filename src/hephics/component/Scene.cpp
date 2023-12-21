@@ -67,10 +67,9 @@ void hephics::Scene::Render()
 	swap_chain->PrepareNextFrame();
 }
 
-void hephics::Scene::ResetScene(const std::shared_ptr<VkInstance>& gpu_instance)
+void hephics::Scene::ResetScene()
 {
-	gpu_instance->GetLogicalDevice()->waitIdle();
-
+	GPUHandler::WaitIdle();
 	hephics::asset::AssetManager::Reset();
 	vk_interface::component::ShaderProvider::Reset();
 }

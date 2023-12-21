@@ -19,14 +19,13 @@ void SampleScene::Initialize(const std::shared_ptr<hephics::window::Window>& ptr
 				case GLFW_KEY_ENTER:
 					m_isChangedScene = true;
 					m_nextSceneName = "second";
-					const auto& gpu_instance = hephics::GPUHandler::GetInstance();
-					Scene::ResetScene(gpu_instance);
+					Scene::ResetScene();
 					break;
 				}
 			}
 		});
 	m_actors.emplace_back(std::make_shared<SampleActor>());
-	//m_actors.emplace_back(std::make_shared<SampleActorAnother>());
+	m_actors.emplace_back(std::make_shared<SampleActorAnother>());
 
 	Scene::Initialize(ptr_window);
 }

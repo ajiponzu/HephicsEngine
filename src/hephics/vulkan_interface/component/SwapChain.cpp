@@ -120,15 +120,11 @@ void vk_interface::component::SwapChain::Clear(const vk::UniqueDevice& logical_d
 	m_swapChain.release();
 }
 
-vk::RenderPassBeginInfo vk_interface::component::SwapChain::GetRenderPassBeginInfo() const
+vk::RenderPassBeginInfo vk_interface::component::SwapChain::GetRenderPassBeginInfo(const std::vector<vk::ClearValue>& clear_values) const
 {
-	vk::ClearValue clear_color({ 0.0f, 0.0f, 0.0f, 1.0f });
-	vk::ClearValue depth_stencil({ 1.0f, 0 });
-	auto clear_values = std::vector{ clear_color, depth_stencil };
-
 	return vk::RenderPassBeginInfo(
 		m_renderPass.get(), m_framebuffers.at(m_nextImageId).get(),
-		{ {0, 0}, m_extent }, clear_values
+		vk::Rect2D{ vk::Offset2D{0, 0}, m_extent }, clear_values
 	);
 }
 
@@ -148,12 +144,10 @@ std::pair<vk::Viewport, vk::Rect2D> vk_interface::component::SwapChain::GetViewp
 }
 
 vk::SubmitInfo vk_interface::component::SwapChain::GetRenderingSubmitInfo(
-	const std::vector<vk::CommandBuffer>& submitted_command_buffers, const vk::PipelineStageFlags& stage_flags) const
+	const std::vector<vk::CommandBuffer>& submitted_command_buffers, const vk::PipelineStageFlags& wait_stage_flags) const
 {
-	vk::PipelineStageFlags wait_stage(stage_flags);
-
 	return vk::SubmitInfo(
-		m_imageAvailableSemaphores.at(m_currentFrameId).get(), wait_stage,
+		m_imageAvailableSemaphores.at(m_currentFrameId).get(), wait_stage_flags,
 		submitted_command_buffers, m_finishedSemaphores.at(m_currentFrameId).get()
 	);
 }

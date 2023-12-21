@@ -148,6 +148,8 @@ vk_interface::component::QueueFamilyIndices hephics_helper::vk_init::find_queue_
 
 		family_id++;
 	}
+	indices.family_array.at(0) = indices.graphics_family.value();
+	indices.family_array.at(1) = indices.present_family.value();
 
 	return indices;
 }

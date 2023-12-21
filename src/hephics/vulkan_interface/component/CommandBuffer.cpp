@@ -19,7 +19,10 @@ void vk_interface::component::CommandBuffer::ResetCommands(const vk::CommandBuff
 void vk_interface::component::CommandBuffer::BeginRenderPass(const std::shared_ptr<SwapChain>& swap_chain,
 	const vk::SubpassContents& subpass_contents)
 {
-	const auto render_pass_info = swap_chain->GetRenderPassBeginInfo();
+	vk::ClearValue clear_color(vk::ClearColorValue{ 0.0f, 0.0f, 0.0f, 1.0f });
+	vk::ClearValue depth_stencil(vk::ClearDepthStencilValue{ 1.0f, 0 });
+	auto clear_values = std::vector{ clear_color, depth_stencil };
+	auto render_pass_info = swap_chain->GetRenderPassBeginInfo(clear_values);
 	m_commandBuffer->beginRenderPass(render_pass_info, subpass_contents);
 	SetViewportAndScissor(swap_chain);
 }

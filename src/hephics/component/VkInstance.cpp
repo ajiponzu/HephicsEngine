@@ -51,19 +51,19 @@ void hephics::VkInstance::SetPhysicalDevice()
 	{
 		m_physicalDevice = physical_device;
 
-		const auto indices = FindQueueFamilies();
+		m_queueFamilyIndices = hephics_helper::vk_init::find_queue_families(m_physicalDevice, m_windowSurface);
 		const auto extensions_supported = hephics_helper::vk_init::check_device_extension_support(physical_device);
 
 		auto swap_chain_adequate = false;
 		if (extensions_supported)
 		{
-			const auto swap_chain_support = QuerySwapChainSupport();
+			const auto swap_chain_support = hephics_helper::vk_init::query_swap_chain_support(m_physicalDevice, m_windowSurface);
 			swap_chain_adequate = !swap_chain_support.formats.empty() && !swap_chain_support.present_modes.empty();
 		}
 
 		const auto physical_device_features = physical_device.getFeatures();
 
-		const auto is_suitable = indices.is_complete()
+		const auto is_suitable = m_queueFamilyIndices.is_complete()
 			&& extensions_supported
 			&& swap_chain_adequate
 			&& physical_device_features.samplerAnisotropy;
@@ -81,10 +81,9 @@ void hephics::VkInstance::SetPhysicalDevice()
 
 void hephics::VkInstance::SetLogicalDeviceAndQueue()
 {
-	const auto indices = FindQueueFamilies();
-
 	std::vector<vk::DeviceQueueCreateInfo> queue_create_info_list;
-	std::set<uint32_t> unique_queue_families = { indices.graphics_family.value(), indices.present_family.value() };
+	std::set<uint32_t> unique_queue_families =
+	{ m_queueFamilyIndices.graphics_family.value(), m_queueFamilyIndices.present_family.value() };
 
 	static constexpr auto queue_priority = 1.0f;
 	for (const auto& queue_family : unique_queue_families)
@@ -105,14 +104,14 @@ void hephics::VkInstance::SetLogicalDeviceAndQueue()
 	m_logicalDevice = m_physicalDevice.createDeviceUnique(create_info);
 	m_queuesDictionary.emplace(vk::QueueFlagBits::eGraphics, std::vector
 		{
-			m_logicalDevice->getQueue(indices.graphics_family.value(), 0),
-			m_logicalDevice->getQueue(indices.present_family.value(), 0)
+			m_logicalDevice->getQueue(m_queueFamilyIndices.graphics_family.value(), 0),
+			m_logicalDevice->getQueue(m_queueFamilyIndices.present_family.value(), 0)
 		});
 }
 
 void hephics::VkInstance::SetSwapChain(const std::shared_ptr<window::Window>& window)
 {
-	const auto swap_chain_support = QuerySwapChainSupport();
+	const auto swap_chain_support = hephics_helper::vk_init::query_swap_chain_support(m_physicalDevice, m_windowSurface);
 
 	const auto surface_format = hephics_helper::vk_init::choose_swap_surface_format(swap_chain_support.formats,
 		vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear);
@@ -132,12 +131,11 @@ void hephics::VkInstance::SetSwapChain(const std::shared_ptr<window::Window>& wi
 		vk::SharingMode::eExclusive, {}, swap_chain_support.capabilities.currentTransform,
 		vk::CompositeAlphaFlagBitsKHR::eOpaque, present_mode, VK_TRUE, nullptr);
 
-	const auto indices = FindQueueFamilies();
-	if (indices.graphics_family != indices.present_family)
+	if (!m_queueFamilyIndices.is_equal_families())
 	{
 		create_info.setImageSharingMode(vk::SharingMode::eConcurrent);
-		const auto queue_family_indices = indices.get_families_array();
-		create_info.setQueueFamilyIndices(queue_family_indices);
+		const auto& queue_family_array = m_queueFamilyIndices.get_families_array();
+		create_info.setQueueFamilyIndices(queue_family_array);
 	}
 
 	m_ptrSwapChain->SetSwapChain(m_logicalDevice, create_info);
@@ -168,7 +166,7 @@ void hephics::VkInstance::SetSwapChainRenderPass()
 void hephics::VkInstance::SetSwapChainFramebuffers()
 {
 	const auto depth_format = FindDepthFormat();
-	const auto queue_family_array = FindQueueFamilies().get_families_array();
+	const auto& queue_family_array = m_queueFamilyIndices.get_families_array();
 
 	vk::ImageCreateInfo image_create_info({}, vk::ImageType::e2D, depth_format,
 		vk::Extent3D(m_ptrSwapChain->GetExtent2D(), 1U), 1, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal,
@@ -197,9 +195,8 @@ void hephics::VkInstance::SetSwapChainSyncObjects()
 
 void hephics::VkInstance::SetCommandPools()
 {
-	const auto queue_family_indices = FindQueueFamilies();
 	vk::CommandPoolCreateInfo create_info(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-		queue_family_indices.graphics_family.value());
+		m_queueFamilyIndices.graphics_family.value());
 
 	const auto command_pool_size = m_ptrSwapChain->GetFramebuffers().size();
 	const auto purpose_number = GPUHandler::GetPurposeNumber();
@@ -308,16 +305,6 @@ void hephics::VkInstance::PresentFrame(const vk::PresentInfoKHR& present_info)
 
 	vk::resultCheck(m_queuesDictionary.at(vk::QueueFlagBits::eGraphics).at(1).presentKHR(present_info),
 		"failed to present");
-}
-
-vk_interface::component::QueueFamilyIndices hephics::VkInstance::FindQueueFamilies() const
-{
-	return hephics_helper::vk_init::find_queue_families(m_physicalDevice, m_windowSurface);
-}
-
-vk_interface::component::SwapChainSupportDetails hephics::VkInstance::QuerySwapChainSupport() const
-{
-	return hephics_helper::vk_init::query_swap_chain_support(m_physicalDevice, m_windowSurface);
 }
 
 vk::Format hephics::VkInstance::FindSupportedFormat(const std::vector<vk::Format>& candidates,

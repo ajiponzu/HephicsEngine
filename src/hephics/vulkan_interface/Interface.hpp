@@ -16,17 +16,31 @@ namespace vk_interface
 		using QueueFamilyArray = std::array<uint32_t, 2>;
 		struct QueueFamilyIndices
 		{
+		public:
+			QueueFamilyIndices()
+			{
+				family_array = QueueFamilyArray();
+			}
+			~QueueFamilyIndices() {}
+
 			std::optional<uint32_t> graphics_family;
 			std::optional<uint32_t> present_family;
+
+			QueueFamilyArray family_array{};
 
 			bool is_complete() const
 			{
 				return graphics_family.has_value() && present_family.has_value();
 			}
 
-			QueueFamilyArray get_families_array() const
+			bool is_equal_families() const
 			{
-				return std::array{ graphics_family.value(), present_family.value() };
+				return graphics_family.value() == present_family.value();
+			}
+
+			const QueueFamilyArray& get_families_array() const
+			{
+				return family_array;
 			}
 		};
 
@@ -375,12 +389,12 @@ namespace vk_interface
 
 			void Clear(const vk::UniqueDevice& logical_device);
 
-			vk::RenderPassBeginInfo GetRenderPassBeginInfo() const;
+			vk::RenderPassBeginInfo GetRenderPassBeginInfo(const std::vector<vk::ClearValue>& clear_values) const;
 
 			std::pair<vk::Viewport, vk::Rect2D> GetViewportAndScissor() const;
 
 			vk::SubmitInfo GetRenderingSubmitInfo(
-				const std::vector<vk::CommandBuffer>& submitted_command_buffers, const vk::PipelineStageFlags& stage_flags) const;
+				const std::vector<vk::CommandBuffer>& submitted_command_buffers, const vk::PipelineStageFlags& wait_stage_flags) const;
 
 			vk::PresentInfoKHR GetPresentInfo() const;
 		};
@@ -491,6 +505,7 @@ namespace vk_interface
 		std::shared_ptr<component::SwapChain> m_ptrSwapChain;
 		std::unordered_map<vk::QueueFlags,
 			std::vector<std::vector<vk::UniqueCommandPool>>> m_commandPoolsDictionary;
+		component::QueueFamilyIndices m_queueFamilyIndices;
 
 	public:
 		Instance()
@@ -514,5 +529,6 @@ namespace vk_interface
 		const auto& GetSwapChain() const { return m_ptrSwapChain; }
 		const auto& GetPhysicalDevice() const { return m_physicalDevice; }
 		const auto& GetWindowSurface() const { return m_windowSurface; }
+		const auto& GetQueueFamilyIndices() const { return m_queueFamilyIndices; }
 	};
 };

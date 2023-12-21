@@ -8,7 +8,7 @@ void hephics_helper::GPUBuffer::Initialize(
 	const auto& window_surface = gpu_instance->GetWindowSurface();
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 
-	const auto queue_family_array =
+	const auto& queue_family_array =
 		vk_init::find_queue_families(physical_device, window_surface).get_families_array();
 
 	SetBuffer(logical_device,
@@ -31,7 +31,7 @@ void hephics_helper::UniformBuffer::Initialize(
 	const auto& window_surface = gpu_instance->GetWindowSurface();
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 
-	const auto queue_family_array =
+	const auto& queue_family_array =
 		vk_init::find_queue_families(physical_device, window_surface).get_families_array();
 
 	vk::BufferCreateInfo uniform_buffer_info({}, buffer_size,
@@ -55,7 +55,7 @@ void hephics_helper::StagingBuffer::Initialize(
 	const auto& window_surface = gpu_instance->GetWindowSurface();
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 
-	const auto queue_family_array =
+	const auto& queue_family_array =
 		vk_init::find_queue_families(physical_device, window_surface).get_families_array();
 
 	vk::BufferCreateInfo staging_buffer_info({}, buffer_size,
@@ -152,7 +152,7 @@ vk::BufferCreateInfo hephics_helper::simple_create_info::get_gpu_buffer_info(
 {
 	const auto& physical_device = gpu_instance->GetPhysicalDevice();
 	const auto& window_surface = gpu_instance->GetWindowSurface();
-	const auto queue_family_array =
+	const auto& queue_family_array =
 		vk_init::find_queue_families(physical_device, window_surface).get_families_array();
 
 	return vk::BufferCreateInfo(
@@ -166,7 +166,7 @@ vk::ImageCreateInfo hephics_helper::simple_create_info::get_texture_image_info(
 {
 	const auto& physical_device = gpu_instance->GetPhysicalDevice();
 	const auto& window_surface = gpu_instance->GetWindowSurface();
-	const auto queue_family_array =
+	const auto& queue_family_array =
 		vk_init::find_queue_families(physical_device, window_surface).get_families_array();
 
 	return vk::ImageCreateInfo(
