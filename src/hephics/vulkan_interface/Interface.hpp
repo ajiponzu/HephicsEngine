@@ -431,7 +431,7 @@ namespace vk_interface
 			void SetViewportAndScissor(const std::shared_ptr<SwapChain>& swap_chain);
 
 			void TransitionImageCommandLayout(const std::shared_ptr<Image>& vk_image, const vk::Format& vk_format,
-				const std::pair<vk::ImageLayout, vk::ImageLayout>& transition_layout_pair);
+				const std::pair<vk::ImageLayout, vk::ImageLayout>& transition_layout_pair, const uint32_t& miplevel);
 
 			void CopyBuffer(const std::shared_ptr<Buffer>& src_buffer,
 				const std::shared_ptr<Buffer>& dst_buffer, const size_t& device_size);

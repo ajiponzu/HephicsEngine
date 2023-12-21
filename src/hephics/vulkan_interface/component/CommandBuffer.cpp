@@ -40,13 +40,14 @@ void vk_interface::component::CommandBuffer::SetViewportAndScissor(const std::sh
 }
 
 void vk_interface::component::CommandBuffer::TransitionImageCommandLayout(const std::shared_ptr<Image>& vk_image,
-	const vk::Format& vk_format, const std::pair<vk::ImageLayout, vk::ImageLayout>& transition_layout_pair)
+	const vk::Format& vk_format, const std::pair<vk::ImageLayout, vk::ImageLayout>& transition_layout_pair, const uint32_t& miplevel)
 {
 	const auto& [old_image_layout, new_image_layout] = transition_layout_pair;
 
 	vk::ImageMemoryBarrier image_memory_barrier(vk::AccessFlagBits::eNone,
 		vk::AccessFlagBits::eNone, old_image_layout, new_image_layout, 0, 0, vk_image->GetImage().get(),
 		vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+	image_memory_barrier.subresourceRange.setLevelCount(miplevel);
 
 	vk::PipelineStageFlags src_stage_flags;
 	vk::PipelineStageFlags dst_stage_flags;

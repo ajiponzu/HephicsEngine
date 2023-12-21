@@ -25,7 +25,6 @@ void SampleScene::Initialize(const std::shared_ptr<hephics::window::Window>& ptr
 			}
 		});
 	m_actors.emplace_back(std::make_shared<SampleActor>());
-	m_actors.emplace_back(std::make_shared<SampleActorAnother>());
 
 	Scene::Initialize(ptr_window);
 }

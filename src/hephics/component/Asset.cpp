@@ -19,6 +19,9 @@ hephics::asset::Texture::Texture(const std::shared_ptr<VkInstance>& gpu_instance
 {
 	hephics::asset::AssetManager::RegistCvMat(path, cv_mat_key);
 	const auto& cv_mat = hephics::asset::AssetManager::GetCvMat(cv_mat_key);
+	const auto& cv_mat_size = cv_mat->size();
+	//m_miplevel = static_cast<uint32_t>(std::floor(std::log2(std::max(cv_mat_size.width, cv_mat_size.height)))) + 1U;
+	m_miplevel = 1;
 
 	const auto& physical_device = gpu_instance->GetPhysicalDevice();
 	const auto& window_surface = gpu_instance->GetWindowSurface();
@@ -26,13 +29,14 @@ hephics::asset::Texture::Texture(const std::shared_ptr<VkInstance>& gpu_instance
 	const auto& queue_family_array = gpu_instance->GetQueueFamilyIndices().get_families_array();
 
 	m_ptrImage = std::make_shared<vk_interface::component::Image>();
-	m_ptrImage->SetImage(logical_device,
-		hephics_helper::simple_create_info::get_texture_image_info(
-			gpu_instance,
-			vk::Extent2D{
-				static_cast<uint32_t>(cv_mat->size().width),
-				static_cast<uint32_t>(cv_mat->size().height)
-			}));
+	auto image_create_info = hephics_helper::simple_create_info::get_texture_image_info(
+		gpu_instance,
+		vk::Extent2D{
+			static_cast<uint32_t>(cv_mat_size.width),
+			static_cast<uint32_t>(cv_mat_size.height)
+		});
+	image_create_info.setMipLevels(m_miplevel);
+	m_ptrImage->SetImage(logical_device, image_create_info);
 
 	const auto memory_requirements = logical_device->getImageMemoryRequirements(m_ptrImage->GetImage().get());
 	const auto memory_type_idx =
@@ -42,8 +46,9 @@ hephics::asset::Texture::Texture(const std::shared_ptr<VkInstance>& gpu_instance
 
 	m_ptrImage->BindMemory(logical_device);
 
-	m_ptrImage->SetImageView(logical_device,
-		hephics_helper::simple_create_info::get_texture_image_view_info(m_ptrImage->GetImage()));
+	auto view_create_info = hephics_helper::simple_create_info::get_texture_image_view_info(m_ptrImage->GetImage());
+	view_create_info.subresourceRange.setLevelCount(m_miplevel);
+	m_ptrImage->SetImageView(logical_device, view_create_info);
 
 	SetSampler(logical_device,
 		hephics_helper::simple_create_info::get_texture_sampler_info(gpu_instance));
@@ -51,19 +56,24 @@ hephics::asset::Texture::Texture(const std::shared_ptr<VkInstance>& gpu_instance
 
 hephics::asset::Texture::Texture(const std::shared_ptr<VkInstance>& gpu_instance, const std::shared_ptr<cv::Mat>& cv_mat)
 {
+	const auto& cv_mat_size = cv_mat->size();
+	//m_miplevel = static_cast<uint32_t>(std::floor(std::log2(std::max(cv_mat_size.width, cv_mat_size.height)))) + 1U;
+	m_miplevel = 1;
+
 	const auto& physical_device = gpu_instance->GetPhysicalDevice();
 	const auto& window_surface = gpu_instance->GetWindowSurface();
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& queue_family_array = gpu_instance->GetQueueFamilyIndices().get_families_array();
 
-	auto texture = std::make_shared<hephics::asset::Texture>();
-	m_ptrImage->SetImage(logical_device,
-		hephics_helper::simple_create_info::get_texture_image_info(
-			gpu_instance,
-			vk::Extent2D{
-				static_cast<uint32_t>(cv_mat->size().width),
-				static_cast<uint32_t>(cv_mat->size().height)
-			}));
+	m_ptrImage = std::make_shared<vk_interface::component::Image>();
+	auto image_create_info = hephics_helper::simple_create_info::get_texture_image_info(
+		gpu_instance,
+		vk::Extent2D{
+			static_cast<uint32_t>(cv_mat_size.width),
+			static_cast<uint32_t>(cv_mat_size.height)
+		});
+	image_create_info.setMipLevels(m_miplevel);
+	m_ptrImage->SetImage(logical_device, image_create_info);
 
 	const auto memory_requirements = logical_device->getImageMemoryRequirements(m_ptrImage->GetImage().get());
 	const auto memory_type_idx =
@@ -73,8 +83,9 @@ hephics::asset::Texture::Texture(const std::shared_ptr<VkInstance>& gpu_instance
 
 	m_ptrImage->BindMemory(logical_device);
 
-	m_ptrImage->SetImageView(logical_device,
-		hephics_helper::simple_create_info::get_texture_image_view_info(m_ptrImage->GetImage()));
+	auto view_create_info = hephics_helper::simple_create_info::get_texture_image_view_info(m_ptrImage->GetImage());
+	view_create_info.subresourceRange.setLevelCount(m_miplevel);
+	m_ptrImage->SetImageView(logical_device, view_create_info);
 
 	SetSampler(logical_device,
 		hephics_helper::simple_create_info::get_texture_sampler_info(gpu_instance));
@@ -83,7 +94,10 @@ hephics::asset::Texture::Texture(const std::shared_ptr<VkInstance>& gpu_instance
 void hephics::asset::Texture::SetSampler(const vk::UniqueDevice& logical_device,
 	const vk::SamplerCreateInfo& create_info)
 {
-	m_sampler = logical_device->createSamplerUnique(create_info);
+	vk::SamplerCreateInfo new_create_info = create_info;
+	//create_info.mip
+	//m_miplevel = ;
+	m_sampler = logical_device->createSamplerUnique(new_create_info);
 }
 
 void hephics::asset::Texture::CopyTexture(const std::shared_ptr<VkInstance>& gpu_instance, const std::shared_ptr<cv::Mat>& cv_mat)
@@ -99,18 +113,16 @@ void hephics::asset::Texture::CopyTexture(const std::shared_ptr<VkInstance>& gpu
 	std::memcpy(staging_map_address, cv_mat->data, buffer_size);
 	staging_buffer->Unmapping(logical_device);
 
-	m_sampler->objectType;
 	command_buffer->TransitionImageCommandLayout(GetImage(), vk::Format::eR8G8B8A8Srgb,
-		{ vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal });
+		{ vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal }, m_miplevel);
 	command_buffer->CopyTexture(staging_buffer, GetImage(),
 		vk::Extent2D{ static_cast<uint32_t>(cv_mat_size.width), static_cast<uint32_t>(cv_mat_size.height) });
-	command_buffer->TransitionImageCommandLayout(GetImage(), vk::Format::eR8G8B8A8Srgb,
-		{ vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal });
+	if (m_miplevel <= 1)
+		command_buffer->TransitionImageCommandLayout(GetImage(), vk::Format::eR8G8B8A8Srgb,
+			{ vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal }, m_miplevel);
 
 	auto& staging_buffers = hephics::Scene::GetStagingBuffers();
 	staging_buffers.emplace_back(std::move(staging_buffer));
-
-	m_sampler->objectType;
 }
 
 void hephics::asset::Asset3D::CopyVertexBuffer(

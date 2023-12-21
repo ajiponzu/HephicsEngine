@@ -114,7 +114,7 @@ void SampleActor::SetPipeline(std::shared_ptr<hephics::VkInstance>& gpu_instance
 
 void SampleActor::Initialize(std::shared_ptr<hephics::VkInstance>& gpu_instance)
 {
-	//m_components.emplace_back(std::make_shared<MoveComponent>());
+	m_components.emplace_back(std::make_shared<MoveComponent>());
 
 	LoadData(gpu_instance);
 	SetPipeline(gpu_instance);

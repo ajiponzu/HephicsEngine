@@ -135,6 +135,7 @@ namespace hephics
 		private:
 			std::shared_ptr<vk_interface::component::Image> m_ptrImage;
 			vk::UniqueSampler m_sampler;
+			uint32_t m_miplevel = 0U;
 
 		public:
 			Texture()
