@@ -66,6 +66,7 @@ namespace hephics
 		private:
 			static std::unordered_map<std::string, std::shared_ptr<Window>> s_windowDictionary;
 			static glm::vec2 s_cursorPosition;
+			static glm::vec2 s_mouseScroll;
 
 			WindowManager() = delete;
 			~WindowManager() = delete;
@@ -79,7 +80,9 @@ namespace hephics
 			static const std::shared_ptr<Window>& GetWindow(const std::string& window_key);
 			static void SetWindowSize(const std::string& window_key, const int32_t& width, const int32_t& height);
 			static void SetCursorPosition(const double& pos_x, const double& pos_y);
+			static void SetMouseScroll(const double& x_offset, const double& y_offset);
 			static const glm::vec2& GetCursorPosition(const std::string& window_key);
+			static const glm::vec2& GetMouseScroll(const std::string& window_key);
 		};
 	};
 

@@ -55,24 +55,24 @@ void vk_interface::component::CommandBuffer::TransitionImageCommandLayout(const 
 	if (old_image_layout == vk::ImageLayout::eUndefined
 		&& new_image_layout == vk::ImageLayout::eTransferDstOptimal)
 	{
-		image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+		image_memory_barrier.setDstAccessMask(vk::AccessFlagBits::eTransferWrite);
 		src_stage_flags = vk::PipelineStageFlagBits::eTopOfPipe;
 		dst_stage_flags = vk::PipelineStageFlagBits::eTransfer;
 	}
 	else if (old_image_layout == vk::ImageLayout::eTransferDstOptimal
 		&& new_image_layout == vk::ImageLayout::eShaderReadOnlyOptimal)
 	{
-		image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-		image_memory_barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+		image_memory_barrier.setSrcAccessMask(vk::AccessFlagBits::eTransferWrite);
+		image_memory_barrier.setDstAccessMask(vk::AccessFlagBits::eShaderRead);
 		src_stage_flags = vk::PipelineStageFlagBits::eTransfer;
 		dst_stage_flags = vk::PipelineStageFlagBits::eFragmentShader;
 	}
 	else if (old_image_layout == vk::ImageLayout::eUndefined
 		&& new_image_layout == vk::ImageLayout::eStencilAttachmentOptimal)
 	{
-		image_memory_barrier.dstAccessMask =
+		image_memory_barrier.setDstAccessMask(
 			vk::AccessFlagBits::eDepthStencilAttachmentRead |
-			vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+			vk::AccessFlagBits::eDepthStencilAttachmentWrite);
 		src_stage_flags = vk::PipelineStageFlagBits::eTopOfPipe;
 		dst_stage_flags = vk::PipelineStageFlagBits::eEarlyFragmentTests;
 	}
@@ -81,13 +81,13 @@ void vk_interface::component::CommandBuffer::TransitionImageCommandLayout(const 
 
 	if (new_image_layout == vk::ImageLayout::eDepthStencilAttachmentOptimal)
 	{
-		image_memory_barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
+		image_memory_barrier.subresourceRange.setAspectMask(vk::ImageAspectFlagBits::eDepth);
 
 		if (vk_format == vk::Format::eD32SfloatS8Uint || vk_format == vk::Format::eD24UnormS8Uint)
 			image_memory_barrier.subresourceRange.aspectMask |= vk::ImageAspectFlagBits::eStencil;
 	}
 	else
-		image_memory_barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+		image_memory_barrier.subresourceRange.setAspectMask(vk::ImageAspectFlagBits::eColor);
 
 	m_commandBuffer->pipelineBarrier(src_stage_flags, dst_stage_flags,
 		{}, nullptr, nullptr, image_memory_barrier);

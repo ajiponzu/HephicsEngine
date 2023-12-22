@@ -18,68 +18,60 @@ void hephics::asset::Texture::GenerateMipmaps(const std::shared_ptr<VkInstance>&
 {
 	auto& command_buffer = gpu_instance->GetGraphicCommandBuffer("copy")->GetCommandBuffer();
 
-	vk::ImageMemoryBarrier barrier;
-	barrier.setImage(m_ptrImage->GetImage().get());
-	barrier.srcQueueFamilyIndex = 0U;
-	barrier.dstQueueFamilyIndex = 0U;
+	vk::Image image = m_ptrImage->GetImage().get();
 
-	int32_t mipWidth = width;
-	int32_t mipHeight = height;
+	vk::ImageMemoryBarrier barrier{
+		vk::AccessFlagBits::eNone, vk::AccessFlagBits::eNone,
+		vk::ImageLayout::eUndefined, vk::ImageLayout::eUndefined, 0, 0, image,
+		vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)
+	};
+
+	int32_t mip_width = width;
+	int32_t mip_height = height;
 
 	for (uint32_t i = 1; i < m_miplevel; i++)
 	{
-		barrier.subresourceRange.baseMipLevel = i - 1;
-		barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-		barrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
-		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-		barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+		barrier.subresourceRange.setBaseMipLevel(i - 1);
+		barrier.setOldLayout(vk::ImageLayout::eTransferDstOptimal);
+		barrier.setNewLayout(vk::ImageLayout::eTransferSrcOptimal);
+		barrier.setSrcAccessMask(vk::AccessFlagBits::eTransferWrite);
+		barrier.setDstAccessMask(vk::AccessFlagBits::eTransferRead);
 
 		command_buffer->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer,
 			vk::DependencyFlags(), nullptr, nullptr, barrier);
 
-		vk::ImageBlit blit;
-		blit.srcOffsets.at(0) = vk::Offset3D(0, 0, 0);
-		blit.srcOffsets.at(1) = vk::Offset3D(mipWidth, mipHeight, 1);
-		blit.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-		blit.srcSubresource.mipLevel = i - 1;
-		blit.srcSubresource.baseArrayLayer = 0;
-		blit.srcSubresource.layerCount = 1;
-
-		blit.dstOffsets.at(0) = vk::Offset3D(0, 0, 0);
-		blit.dstOffsets.at(1) = vk::Offset3D(
-			std::max(1, mipWidth / 2),
-			std::max(1, mipHeight / 2),
-			1);
-		blit.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-		blit.dstSubresource.mipLevel = i;
-		blit.dstSubresource.baseArrayLayer = 0;
-		blit.dstSubresource.layerCount = 1;
+		vk::ImageBlit blit{
+			vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, i - 1, 0, 1),
+			{ vk::Offset3D(0, 0, 0), vk::Offset3D(mip_width, mip_height, 1)},
+			vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, i, 0, 1),
+			{ vk::Offset3D(0, 0, 0), vk::Offset3D(std::max(1, mip_width / 2), std::max(1, mip_height / 2), 1)}
+		};
 
 		command_buffer->blitImage(
-			m_ptrImage->GetImage().get(), vk::ImageLayout::eTransferSrcOptimal,
-			m_ptrImage->GetImage().get(), vk::ImageLayout::eTransferDstOptimal,
-			1, &blit,
-			vk::Filter::eLinear);
+			image, vk::ImageLayout::eTransferSrcOptimal,
+			image, vk::ImageLayout::eTransferDstOptimal,
+			blit, vk::Filter::eLinear
+		);
 
-		barrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
-		barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
-		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+		barrier.setOldLayout(vk::ImageLayout::eTransferSrcOptimal);
+		barrier.setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+		barrier.setSrcAccessMask(vk::AccessFlagBits::eTransferRead);
+		barrier.setDstAccessMask(vk::AccessFlagBits::eShaderRead);
 
 		command_buffer->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader,
 			vk::DependencyFlags(), nullptr, nullptr, barrier);
 
-		if (mipWidth > 1)
-			mipWidth /= 2;
-		if (mipHeight > 1)
-			mipHeight /= 2;
+		if (mip_width > 1)
+			mip_width /= 2;
+		if (mip_height > 1)
+			mip_height /= 2;
 	}
 
-	barrier.subresourceRange.baseMipLevel = m_miplevel - 1;
-	barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-	barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-	barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-	barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+	barrier.subresourceRange.setBaseMipLevel(m_miplevel - 1);
+	barrier.setOldLayout(vk::ImageLayout::eTransferDstOptimal);
+	barrier.setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+	barrier.setSrcAccessMask(vk::AccessFlagBits::eTransferWrite);
+	barrier.setDstAccessMask(vk::AccessFlagBits::eShaderRead);
 
 	command_buffer->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader,
 		vk::DependencyFlags(), nullptr, nullptr, barrier);
@@ -91,8 +83,7 @@ hephics::asset::Texture::Texture(const std::shared_ptr<VkInstance>& gpu_instance
 	hephics::asset::AssetManager::RegistCvMat(path, cv_mat_key);
 	const auto& cv_mat = hephics::asset::AssetManager::GetCvMat(cv_mat_key);
 	const auto& cv_mat_size = cv_mat->size();
-	//m_miplevel = static_cast<uint32_t>(std::floor(std::log2(std::max(cv_mat_size.width, cv_mat_size.height)))) + 1U;
-	m_miplevel = 2U;
+	m_miplevel = static_cast<uint32_t>(std::floor(std::log2(std::max(cv_mat_size.width, cv_mat_size.height)))) + 1U;
 
 	const auto& physical_device = gpu_instance->GetPhysicalDevice();
 	const auto& window_surface = gpu_instance->GetWindowSurface();
@@ -128,8 +119,7 @@ hephics::asset::Texture::Texture(const std::shared_ptr<VkInstance>& gpu_instance
 hephics::asset::Texture::Texture(const std::shared_ptr<VkInstance>& gpu_instance, const std::shared_ptr<cv::Mat>& cv_mat)
 {
 	const auto& cv_mat_size = cv_mat->size();
-	//m_miplevel = static_cast<uint32_t>(std::floor(std::log2(std::max(cv_mat_size.width, cv_mat_size.height)))) + 1U;
-	m_miplevel = 2U;
+	m_miplevel = static_cast<uint32_t>(std::floor(std::log2(std::max(cv_mat_size.width, cv_mat_size.height)))) + 1U;
 
 	const auto& physical_device = gpu_instance->GetPhysicalDevice();
 	const auto& window_surface = gpu_instance->GetWindowSurface();
@@ -169,8 +159,9 @@ void hephics::asset::Texture::SetSampler(const vk::UniqueDevice& logical_device,
 	if (m_miplevel > 1)
 	{
 		new_create_info.setMipmapMode(vk::SamplerMipmapMode::eLinear);
+		//new_create_info.setMinLod(static_cast<float_t>(m_miplevel / 2));
 		new_create_info.setMinLod(0.0f);
-		new_create_info.setMaxLod(static_cast<float_t>(m_miplevel) / 2);
+		new_create_info.setMaxLod(static_cast<float_t>(m_miplevel)); // miplevel higher => lower resolution image
 		new_create_info.setMipLodBias(0.0f);
 	}
 	m_sampler = logical_device->createSamplerUnique(new_create_info);
@@ -193,11 +184,11 @@ void hephics::asset::Texture::CopyTexture(std::shared_ptr<VkInstance>& gpu_insta
 		{ vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal }, m_miplevel);
 	command_buffer->CopyTexture(staging_buffer, GetImage(),
 		vk::Extent2D{ static_cast<uint32_t>(cv_mat_size.width), static_cast<uint32_t>(cv_mat_size.height) });
-	std::cout << m_miplevel << std::endl;
 	if (m_miplevel > 1)
 		GenerateMipmaps(gpu_instance, cv_mat_size.width, cv_mat_size.height);
-	command_buffer->TransitionImageCommandLayout(GetImage(), vk::Format::eR8G8B8A8Srgb,
-		{ vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal }, m_miplevel);
+	else
+		command_buffer->TransitionImageCommandLayout(GetImage(), vk::Format::eR8G8B8A8Srgb,
+			{ vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal }, m_miplevel);
 
 	auto& staging_buffers = hephics::Scene::GetStagingBuffers();
 	staging_buffers.emplace_back(std::move(staging_buffer));

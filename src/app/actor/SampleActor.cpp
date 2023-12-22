@@ -156,9 +156,13 @@ void SampleActor::Update(std::shared_ptr<hephics::VkInstance>& gpu_instance)
 	auto& uniform_buffer = m_ptrShaderAttachment->GetUniformBuffersMap().at("position").at(current_frame_id);
 	auto uniform_address = uniform_buffer->Mapping(logical_device);
 
+	static glm::vec2 scroll;
+	const auto& mouse_scroll = hephics::window::WindowManager::GetMouseScroll(gpu_instance->GetWindowTitle());
+	scroll += mouse_scroll;
+
 	m_ptrPosition->model = glm::rotate(glm::mat4(1.0), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	m_ptrPosition->view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	m_ptrPosition->projection = glm::perspective(glm::radians(45.0f),
+	m_ptrPosition->view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f + scroll[1] / 500.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	m_ptrPosition->projection = glm::perspective(glm::radians(45.0f + scroll[0] / 200.0f),
 		swap_chain->GetExtent2D().width / static_cast<float_t>(swap_chain->GetExtent2D().height), 0.1f, 10.0f);
 	m_ptrPosition->projection[1][1] *= -1;
 

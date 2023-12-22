@@ -217,6 +217,7 @@ void SampleActorAnother::Update(std::shared_ptr<hephics::VkInstance>& gpu_instan
 		const auto& diff_y = cursor_pos[1] - window->GetHeight() / 2.0f;
 		glm::vec2 new_cursor_pos{ diff_x, diff_y };
 		std::memcpy(cursor_uniform_address, &new_cursor_pos, sizeof(float_t));
+		cursor_uniform_buffer->Unmapping(logical_device);
 	}
 
 	{

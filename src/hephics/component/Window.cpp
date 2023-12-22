@@ -8,6 +8,7 @@ std::unordered_map<const ::GLFWwindow*, std::string> hephics::window::Window::s_
 std::unordered_map<std::string, std::shared_ptr<hephics::window::Window>> hephics::window::WindowManager::s_windowDictionary;
 
 glm::vec2 hephics::window::WindowManager::s_cursorPosition;
+glm::vec2 hephics::window::WindowManager::s_mouseScroll;
 
 static void input_key_callback(::GLFWwindow* ptr_window, int key, int scancode, int action, int mods)
 {
@@ -58,6 +59,7 @@ static void mouse_button_callback(::GLFWwindow* ptr_window, int button, int acti
 static void mouse_scroll_callback(::GLFWwindow* ptr_window, double xoffset, double yoffset)
 {
 	using CallbackType = hephics::window::MouseScrollCallback;
+	hephics::window::WindowManager::SetMouseScroll(xoffset, yoffset);
 	try
 	{
 		const auto& callback_variant = hephics::window::Window::GetCallback<CallbackType>(ptr_window);
@@ -231,10 +233,21 @@ const glm::vec2& hephics::window::WindowManager::GetCursorPosition(const std::st
 	return s_cursorPosition;
 }
 
+const glm::vec2& hephics::window::WindowManager::GetMouseScroll(const std::string& window_key)
+{
+	return s_mouseScroll;
+}
+
 void hephics::window::WindowManager::SetCursorPosition(const double& pos_x, const double& pos_y)
 {
 	s_cursorPosition[0] = static_cast<float_t>(pos_x);
 	s_cursorPosition[1] = static_cast<float_t>(pos_y);
+}
+
+void hephics::window::WindowManager::SetMouseScroll(const double& x_offset, const double& y_offset)
+{
+	s_mouseScroll[0] = static_cast<float_t>(x_offset);
+	s_mouseScroll[1] = static_cast<float_t>(y_offset);
 }
 
 void hephics::window::WindowManager::SetWindowSize(

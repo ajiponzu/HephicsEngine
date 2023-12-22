@@ -15,6 +15,8 @@ void hephics::Scene::Initialize(const std::shared_ptr<window::Window>& ptr_windo
 
 	copy_command_buffer->EndRecordingCommands();
 
+	std::cout << std::endl << std::endl;
+
 	std::vector<vk::CommandBuffer> submitted_command_buffers;
 	submitted_command_buffers.push_back(copy_command_buffer->GetCommandBuffer().get());
 

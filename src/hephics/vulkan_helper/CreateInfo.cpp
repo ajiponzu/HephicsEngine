@@ -169,10 +169,11 @@ vk::ImageCreateInfo hephics_helper::simple_create_info::get_texture_image_info(
 	const auto& queue_family_array =
 		vk_init::find_queue_families(physical_device, window_surface).get_families_array();
 
+	// eTransferSrc: In order to send image bilt, purpose of mipmapping
 	return vk::ImageCreateInfo(
 		{}, vk::ImageType::e2D, vk::Format::eR8G8B8A8Srgb,
 		vk::Extent3D(extent, 1U), 1, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal,
-		vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
 		vk::SharingMode::eExclusive, queue_family_array
 	);
 }
