@@ -177,7 +177,7 @@ namespace hephics
 
 			const auto& GetSampler() const { return m_sampler; }
 
-			void CopyTexture(std::shared_ptr<VkInstance>& gpu_instance,
+			void CopyTexture(const std::shared_ptr<VkInstance>& gpu_instance,
 				const std::shared_ptr<cv::Mat>& cv_mat);
 
 			const auto& GetMiplevel() const { return m_miplevel; }
@@ -233,8 +233,8 @@ namespace hephics
 			const auto& GetVertexBuffer() const { return m_ptrVertexBuffer; }
 			const auto& GetIndexBuffer() const { return m_ptrIndexBuffer; }
 
-			void CopyVertexBuffer(std::shared_ptr<VkInstance>& gpu_instance) const;
-			void CopyIndexBuffer(std::shared_ptr<VkInstance>& gpu_instance) const;
+			void CopyVertexBuffer(const std::shared_ptr<VkInstance>& gpu_instance) const;
+			void CopyIndexBuffer(const std::shared_ptr<VkInstance>& gpu_instance) const;
 		};
 
 		class Texture3D : public Asset3D
@@ -361,8 +361,8 @@ namespace hephics
 			std::shared_ptr<ShaderAttachment> m_ptrShaderAttachment;
 			bool m_visible = false;
 
-			virtual void LoadData(std::shared_ptr<VkInstance>& gpu_instance) {}
-			virtual void SetPipeline(std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void LoadData(const std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void SetPipeline(const std::shared_ptr<VkInstance>& gpu_instance) {}
 
 		public:
 			Component() : m_visible(true)
@@ -374,9 +374,9 @@ namespace hephics
 			void SetVisible(const bool& is_visible) { m_visible = is_visible; }
 			const auto& IsVisible() const { return m_visible; }
 
-			virtual void Initialize(std::shared_ptr<VkInstance>& gpu_instance) {}
-			virtual void Update(class Actor* const owner, std::shared_ptr<VkInstance>& gpu_instance) {}
-			virtual void Render(std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void Initialize(const std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void Update(class Actor* const owner, const std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void Render(const std::shared_ptr<VkInstance>& gpu_instance) {}
 		};
 
 		class Actor
@@ -387,8 +387,8 @@ namespace hephics
 			std::shared_ptr<Position> m_ptrPosition;
 			bool m_visible = false;
 
-			virtual void LoadData(std::shared_ptr<VkInstance>& gpu_instance) {}
-			virtual void SetPipeline(std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void LoadData(const std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void SetPipeline(const std::shared_ptr<VkInstance>& gpu_instance) {}
 
 		public:
 			Actor() : m_visible(true)
@@ -401,9 +401,9 @@ namespace hephics
 			void SetVisible(const bool& is_visible) { m_visible = is_visible; }
 			const auto& IsVisible() const { return m_visible; }
 
-			virtual void Initialize(std::shared_ptr<VkInstance>& gpu_instance) {}
-			virtual void Update(std::shared_ptr<VkInstance>& gpu_instance) {}
-			virtual void Render(std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void Initialize(const std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void Update(const std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void Render(const std::shared_ptr<VkInstance>& gpu_instance) {}
 
 			auto& GetPosition() { return m_ptrPosition; }
 		};

@@ -6,11 +6,11 @@ static bool check_press_key(const std::shared_ptr<hephics::window::Window>& ptr_
 	return ::glfwGetKey(glfw_window, key) == GLFW_PRESS;
 }
 
-void MoveComponent::Initialize(std::shared_ptr<hephics::VkInstance>& gpu_instance)
+void MoveComponent::Initialize(const std::shared_ptr<hephics::VkInstance>& gpu_instance)
 {
 }
 
-void MoveComponent::Update(hephics::actor::Actor* const owner, std::shared_ptr<hephics::VkInstance>& gpu_instance)
+void MoveComponent::Update(hephics::actor::Actor* const owner, const std::shared_ptr<hephics::VkInstance>& gpu_instance)
 {
 	static constexpr auto VERTICAL_MOVEMENT = 2.0f;
 	static constexpr auto HORIZONTAL_MOVEMENT = 2.0f;
@@ -76,6 +76,6 @@ void MoveComponent::Update(hephics::actor::Actor* const owner, std::shared_ptr<h
 	}
 }
 
-void MoveComponent::Render(std::shared_ptr<hephics::VkInstance>& gpu_instance)
+void MoveComponent::Render(const std::shared_ptr<hephics::VkInstance>& gpu_instance)
 {
 }

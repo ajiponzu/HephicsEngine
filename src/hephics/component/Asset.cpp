@@ -167,7 +167,7 @@ void hephics::asset::Texture::SetSampler(const vk::UniqueDevice& logical_device,
 	m_sampler = logical_device->createSamplerUnique(new_create_info);
 }
 
-void hephics::asset::Texture::CopyTexture(std::shared_ptr<VkInstance>& gpu_instance, const std::shared_ptr<cv::Mat>& cv_mat)
+void hephics::asset::Texture::CopyTexture(const std::shared_ptr<VkInstance>& gpu_instance, const std::shared_ptr<cv::Mat>& cv_mat)
 {
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	auto& command_buffer = gpu_instance->GetGraphicCommandBuffer("copy");
@@ -194,7 +194,7 @@ void hephics::asset::Texture::CopyTexture(std::shared_ptr<VkInstance>& gpu_insta
 	staging_buffers.emplace_back(std::move(staging_buffer));
 }
 
-void hephics::asset::Asset3D::CopyVertexBuffer(std::shared_ptr<VkInstance>& gpu_instance) const
+void hephics::asset::Asset3D::CopyVertexBuffer(const std::shared_ptr<VkInstance>& gpu_instance) const
 {
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	auto& command_buffer = gpu_instance->GetGraphicCommandBuffer("copy");
@@ -211,7 +211,7 @@ void hephics::asset::Asset3D::CopyVertexBuffer(std::shared_ptr<VkInstance>& gpu_
 	staging_buffers.emplace_back(std::move(staging_buffer));
 }
 
-void hephics::asset::Asset3D::CopyIndexBuffer(std::shared_ptr<VkInstance>& gpu_instance) const
+void hephics::asset::Asset3D::CopyIndexBuffer(const std::shared_ptr<VkInstance>& gpu_instance) const
 {
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	auto& command_buffer = gpu_instance->GetGraphicCommandBuffer("copy");

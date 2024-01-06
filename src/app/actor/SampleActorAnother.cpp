@@ -1,6 +1,6 @@
 #include "../SampleApp.hpp"
 
-void SampleActorAnother::LoadData(std::shared_ptr<hephics::VkInstance>& gpu_instance)
+void SampleActorAnother::LoadData(const std::shared_ptr<hephics::VkInstance>& gpu_instance)
 {
 	const auto& physical_device = gpu_instance->GetPhysicalDevice();
 	const auto& window_surface = gpu_instance->GetWindowSurface();
@@ -109,7 +109,7 @@ void SampleActorAnother::LoadData(std::shared_ptr<hephics::VkInstance>& gpu_inst
 	}
 }
 
-void SampleActorAnother::SetPipeline(std::shared_ptr<hephics::VkInstance>& gpu_instance)
+void SampleActorAnother::SetPipeline(const std::shared_ptr<hephics::VkInstance>& gpu_instance)
 {
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& render_pass = gpu_instance->GetSwapChain()->GetRenderPass();
@@ -168,7 +168,7 @@ void SampleActorAnother::SetPipeline(std::shared_ptr<hephics::VkInstance>& gpu_i
 	ref_graphic_pipeline->SetPipeline(logical_device, pipeline_info);
 }
 
-void SampleActorAnother::Initialize(std::shared_ptr<hephics::VkInstance>& gpu_instance)
+void SampleActorAnother::Initialize(const std::shared_ptr<hephics::VkInstance>& gpu_instance)
 {
 	LoadData(gpu_instance);
 	SetPipeline(gpu_instance);
@@ -191,7 +191,7 @@ void SampleActorAnother::Initialize(std::shared_ptr<hephics::VkInstance>& gpu_in
 		component->Initialize(gpu_instance);
 }
 
-void SampleActorAnother::Update(std::shared_ptr<hephics::VkInstance>& gpu_instance)
+void SampleActorAnother::Update(const std::shared_ptr<hephics::VkInstance>& gpu_instance)
 {
 	static auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -249,7 +249,7 @@ void SampleActorAnother::Update(std::shared_ptr<hephics::VkInstance>& gpu_instan
 	}
 }
 
-void SampleActorAnother::Render(std::shared_ptr<hephics::VkInstance>& gpu_instance)
+void SampleActorAnother::Render(const std::shared_ptr<hephics::VkInstance>& gpu_instance)
 {
 	/* firstly, actor's render method */
 	auto& logical_device = gpu_instance->GetLogicalDevice();
