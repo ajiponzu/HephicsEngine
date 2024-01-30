@@ -168,18 +168,21 @@ void hephics::VkInstance::SetSwapChainFramebuffers()
 	const auto depth_format = FindDepthFormat();
 	const auto& queue_family_array = m_queueFamilyIndices.get_families_array();
 
+	auto& swap_chain_depth_image = m_ptrSwapChain->GetDepthImage();
+	auto& swap_chain_color_image = m_ptrSwapChain->GetColorImage();
+
 	vk::ImageCreateInfo image_create_info({}, vk::ImageType::e2D, depth_format,
 		vk::Extent3D(m_ptrSwapChain->GetExtent2D(), 1U), 1, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal,
 		vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::SharingMode::eExclusive, queue_family_array);
-	m_ptrSwapChain->SetDepthImage(m_logicalDevice, image_create_info);
+	swap_chain_depth_image->SetImage(m_logicalDevice, image_create_info);
 
-	const auto& memory_requirements = m_ptrSwapChain->GetDepthImageMemoryRequirements(m_logicalDevice);
+	const auto& memory_requirements = swap_chain_depth_image->GetMemoryRequirements(m_logicalDevice);
 	const auto& memory_type_idx = FindMemoryType(memory_requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
 	vk::MemoryAllocateInfo allocate_info(memory_requirements.size, memory_type_idx);
-	m_ptrSwapChain->SetDepthImageMemory(m_logicalDevice, allocate_info);
+	swap_chain_depth_image->SetMemory(m_logicalDevice, allocate_info);
 
-	m_ptrSwapChain->BindDepthImageMemory(m_logicalDevice);
-	m_ptrSwapChain->SetDepthImageView(m_logicalDevice,
+	swap_chain_depth_image->BindMemory(m_logicalDevice);
+	swap_chain_depth_image->SetImageView(m_logicalDevice,
 		hephics_helper::simple_create_info::get_swap_chain_depth_image_view_info(depth_format));
 
 	const auto& swap_chain_extent = m_ptrSwapChain->GetExtent2D();

@@ -293,6 +293,7 @@ namespace vk_interface
 			std::vector<vk::UniqueImageView> m_imageViews;
 			std::vector<vk::UniqueFramebuffer> m_framebuffers;
 			std::shared_ptr<Image> m_ptrDepthImage;
+			std::shared_ptr<Image> m_ptrColorImage;
 			vk::UniqueRenderPass m_renderPass;
 			vk::Format m_imageFormat{};
 			vk::Extent2D m_extent;
@@ -308,6 +309,7 @@ namespace vk_interface
 			SwapChain()
 			{
 				m_ptrDepthImage = std::make_shared<Image>();
+				m_ptrColorImage = std::make_shared<Image>();
 			}
 			~SwapChain() {}
 
@@ -316,6 +318,7 @@ namespace vk_interface
 				m_swapChain = std::move(other.m_swapChain);
 				m_renderPass = std::move(other.m_renderPass);
 				m_ptrDepthImage = other.m_ptrDepthImage;
+				m_ptrColorImage = other.m_ptrColorImage;
 			}
 
 			SwapChain& operator=(SwapChain&& other) noexcept
@@ -323,6 +326,7 @@ namespace vk_interface
 				m_swapChain = std::move(other.m_swapChain);
 				m_renderPass = std::move(other.m_renderPass);
 				m_ptrDepthImage = other.m_ptrDepthImage;
+				m_ptrColorImage = other.m_ptrColorImage;
 			}
 
 			void SetSwapChain(const vk::UniqueDevice& logical_device, const vk::SwapchainCreateInfoKHR& create_info);
@@ -332,34 +336,9 @@ namespace vk_interface
 			void SetRenderPass(const vk::UniqueDevice& logical_device,
 				const vk::RenderPassCreateInfo& create_info);
 
-			void SetDepthImage(const vk::UniqueDevice& logical_device, const vk::ImageCreateInfo& create_info)
-			{
-				m_ptrDepthImage->SetImage(logical_device, create_info);
-			}
-
-			void SetDepthImageMemory(const vk::UniqueDevice& logical_device, const vk::MemoryAllocateInfo& allocate_info)
-			{
-				m_ptrDepthImage->SetMemory(logical_device, allocate_info);
-			}
-
-			void SetDepthImageView(const vk::UniqueDevice& logical_device, const vk::ImageViewCreateInfo& create_info)
-			{
-				m_ptrDepthImage->SetImageView(logical_device, create_info);
-			}
-
-			void BindDepthImageMemory(const vk::UniqueDevice& logical_device)
-			{
-				m_ptrDepthImage->BindMemory(logical_device);
-			}
-
 			void SetFramebuffers(const vk::UniqueDevice& logical_device, const vk::FramebufferCreateInfo& create_info);
 
 			void SetSyncObjects(const vk::UniqueDevice& logical_device, const int32_t& buffering_num);
-
-			auto GetDepthImageMemoryRequirements(const vk::UniqueDevice& logical_device) const
-			{
-				return m_ptrDepthImage->GetMemoryRequirements(logical_device);
-			}
 
 			const auto& GetFramebuffers() const { return m_framebuffers; }
 
@@ -367,7 +346,11 @@ namespace vk_interface
 
 			const auto& GetExtent2D() const { return m_extent; }
 
+			auto& GetDepthImage() { return m_ptrDepthImage; }
 			const auto& GetDepthImage() const { return m_ptrDepthImage; }
+
+			auto& GetColorImage() { return m_ptrColorImage; }
+			const auto& GetColorImage() const { return m_ptrColorImage; }
 
 			const auto& GetRenderPass() const { return m_renderPass; }
 
@@ -523,12 +506,12 @@ namespace vk_interface
 			m_instance = std::move(other.m_instance);
 			m_windowSurface = std::move(other.m_windowSurface);
 			m_logicalDevice = std::move(other.m_logicalDevice);
-		}
+	}
 
 		const auto& GetLogicalDevice() const { return m_logicalDevice; }
 		const auto& GetSwapChain() const { return m_ptrSwapChain; }
 		const auto& GetPhysicalDevice() const { return m_physicalDevice; }
 		const auto& GetWindowSurface() const { return m_windowSurface; }
 		const auto& GetQueueFamilyIndices() const { return m_queueFamilyIndices; }
-	};
+};
 };
