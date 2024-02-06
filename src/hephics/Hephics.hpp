@@ -133,6 +133,8 @@ namespace hephics
 		virtual uint32_t FindMemoryType(const uint32_t& memory_type_filter,
 			const vk::MemoryPropertyFlags& memory_prop_flags) const;
 
+		virtual vk::SampleCountFlagBits GetMultiSampleCount() const;
+
 		const auto& GetWindowTitle() const { return m_windowTitle; }
 		auto& GetGraphicCommandBuffers() { return m_graphicCommandBuffers.at(m_ptrSwapChain->GetNextImageId()); }
 		std::shared_ptr<vk_interface::component::CommandBuffer>& GetGraphicCommandBuffer(const std::string& purpose);

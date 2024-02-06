@@ -85,7 +85,7 @@ void SampleActor::SetPipeline(const std::shared_ptr<hephics::VkInstance>& gpu_in
 		vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise,
 		VK_FALSE, 0.0f, 0.0f, 0.0f, 1.0f);
 
-	vk::PipelineMultisampleStateCreateInfo multisampling({}, vk::SampleCountFlagBits::e1, VK_FALSE);
+	vk::PipelineMultisampleStateCreateInfo multisampling({}, gpu_instance->GetMultiSampleCount(), VK_FALSE);
 
 	vk::PipelineDepthStencilStateCreateInfo depth_stencil({}, VK_TRUE, VK_TRUE,
 		vk::CompareOp::eLess, VK_FALSE, VK_FALSE);
@@ -160,7 +160,7 @@ void SampleActor::Update(const std::shared_ptr<hephics::VkInstance>& gpu_instanc
 	const auto& mouse_scroll = hephics::window::WindowManager::GetMouseScroll(gpu_instance->GetWindowTitle());
 	scroll += mouse_scroll;
 
-	m_ptrPosition->model = glm::rotate(glm::mat4(1.0), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	m_ptrPosition->model = glm::rotate(glm::mat4(1.0), glm::radians(60.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	m_ptrPosition->view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f + scroll[1] / 500.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	m_ptrPosition->projection = glm::perspective(glm::radians(45.0f + scroll[0] / 200.0f),
 		swap_chain->GetExtent2D().width / static_cast<float_t>(swap_chain->GetExtent2D().height), 0.1f, 10.0f);

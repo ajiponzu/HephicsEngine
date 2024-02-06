@@ -204,3 +204,25 @@ uint32_t hephics_helper::vk_init::find_memory_type(const vk::PhysicalDevice& phy
 
 	return 0;
 }
+
+vk::SampleCountFlagBits hephics_helper::vk_init::get_multi_sample_count(const vk::PhysicalDevice& physical_device)
+{
+	const auto physical_device_props = physical_device.getProperties();
+	const auto sample_count =
+		physical_device_props.limits.framebufferColorSampleCounts & physical_device_props.limits.framebufferDepthSampleCounts;
+
+	if (sample_count & vk::SampleCountFlagBits::e64)
+		return vk::SampleCountFlagBits::e64;
+	if (sample_count & vk::SampleCountFlagBits::e32)
+		return vk::SampleCountFlagBits::e32;
+	if (sample_count & vk::SampleCountFlagBits::e16)
+		return vk::SampleCountFlagBits::e16;
+	if (sample_count & vk::SampleCountFlagBits::e8)
+		return vk::SampleCountFlagBits::e8;
+	if (sample_count & vk::SampleCountFlagBits::e4)
+		return vk::SampleCountFlagBits::e4;
+	if (sample_count & vk::SampleCountFlagBits::e2)
+		return vk::SampleCountFlagBits::e2;
+
+	return vk::SampleCountFlagBits::e1;
+}

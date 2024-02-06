@@ -119,19 +119,31 @@ vk::ImageViewCreateInfo hephics_helper::simple_create_info::get_swap_chain_depth
 		vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1));
 }
 
+vk::ImageViewCreateInfo hephics_helper::simple_create_info::get_swap_chain_color_image_view_info(const vk::Format& format)
+{
+	return vk::ImageViewCreateInfo({}, {}, vk::ImageViewType::e2D, format,
+		vk::ComponentMapping(vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity,
+			vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity),
+		vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+}
+
 std::vector<vk::AttachmentDescription> hephics_helper::simple_create_info::get_renderpass_attachment_descriptions(
-	const vk::Format& color_format, const vk::Format& depth_format)
+	const vk::SampleCountFlagBits& sample_count, const vk::Format& color_format, const vk::Format& depth_format)
 {
 	vk::AttachmentDescription color_attachment({}, color_format,
-		vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
+		sample_count, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
 		vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
-		vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
+		vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
 	vk::AttachmentDescription depth_attachment({}, depth_format,
-		vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eDontCare,
+		sample_count, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eDontCare,
 		vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
 		vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+	vk::AttachmentDescription color_resolve_attachment({}, color_format,
+		vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eStore,
+		vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
+		vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 
-	return std::vector{ color_attachment, depth_attachment };
+	return std::vector{ color_attachment, depth_attachment, color_resolve_attachment };
 }
 
 vk::SubpassDependency hephics_helper::simple_create_info::get_renderpass_dependency()

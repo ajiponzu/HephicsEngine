@@ -141,7 +141,7 @@ void SampleActorAnother::SetPipeline(const std::shared_ptr<hephics::VkInstance>&
 		vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise,
 		VK_FALSE, 0.0f, 0.0f, 0.0f, 1.0f);
 
-	vk::PipelineMultisampleStateCreateInfo multisampling({}, vk::SampleCountFlagBits::e1, VK_FALSE);
+	vk::PipelineMultisampleStateCreateInfo multisampling({}, gpu_instance->GetMultiSampleCount(), VK_FALSE);
 
 	vk::PipelineDepthStencilStateCreateInfo depth_stencil({}, VK_TRUE, VK_TRUE,
 		vk::CompareOp::eLess, VK_FALSE, VK_FALSE);

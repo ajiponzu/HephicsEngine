@@ -149,14 +149,16 @@ void hephics::VkInstance::SetSwapChainImageViews()
 
 void hephics::VkInstance::SetSwapChainRenderPass()
 {
+	const auto image_sample_count = hephics_helper::vk_init::get_multi_sample_count(m_physicalDevice);
 	auto attachments =
 		hephics_helper::simple_create_info::get_renderpass_attachment_descriptions(
-			m_ptrSwapChain->GetImageFormat(), FindDepthFormat());
+			image_sample_count, m_ptrSwapChain->GetImageFormat(), FindDepthFormat());
 
 	vk::AttachmentReference color_attachment_ref(0, vk::ImageLayout::eColorAttachmentOptimal);
 	vk::AttachmentReference depth_attachment_ref(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+	vk::AttachmentReference color_resolve_attachment_ref(2, vk::ImageLayout::eColorAttachmentOptimal);
 	vk::SubpassDescription subpass({}, vk::PipelineBindPoint::eGraphics,
-		{}, color_attachment_ref, {}, &depth_attachment_ref);
+		{}, color_attachment_ref, color_resolve_attachment_ref, &depth_attachment_ref);
 
 	auto dependency = hephics_helper::simple_create_info::get_renderpass_dependency();
 	vk::RenderPassCreateInfo create_info({}, attachments, subpass, dependency);
@@ -165,25 +167,47 @@ void hephics::VkInstance::SetSwapChainRenderPass()
 
 void hephics::VkInstance::SetSwapChainFramebuffers()
 {
+	const auto color_format = m_ptrSwapChain->GetImageFormat();
 	const auto depth_format = FindDepthFormat();
 	const auto& queue_family_array = m_queueFamilyIndices.get_families_array();
+	const auto image_sample_count = hephics_helper::vk_init::get_multi_sample_count(m_physicalDevice);
 
-	auto& swap_chain_depth_image = m_ptrSwapChain->GetDepthImage();
-	auto& swap_chain_color_image = m_ptrSwapChain->GetColorImage();
+	{
+		auto& swap_chain_color_image = m_ptrSwapChain->GetColorImage();
 
-	vk::ImageCreateInfo image_create_info({}, vk::ImageType::e2D, depth_format,
-		vk::Extent3D(m_ptrSwapChain->GetExtent2D(), 1U), 1, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal,
-		vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::SharingMode::eExclusive, queue_family_array);
-	swap_chain_depth_image->SetImage(m_logicalDevice, image_create_info);
+		vk::ImageCreateInfo image_create_info({}, vk::ImageType::e2D, color_format,
+			vk::Extent3D(m_ptrSwapChain->GetExtent2D(), 1U), 1, 1, image_sample_count, vk::ImageTiling::eOptimal,
+			vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
+			vk::SharingMode::eExclusive, queue_family_array);
+		swap_chain_color_image->SetImage(m_logicalDevice, image_create_info);
 
-	const auto& memory_requirements = swap_chain_depth_image->GetMemoryRequirements(m_logicalDevice);
-	const auto& memory_type_idx = FindMemoryType(memory_requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
-	vk::MemoryAllocateInfo allocate_info(memory_requirements.size, memory_type_idx);
-	swap_chain_depth_image->SetMemory(m_logicalDevice, allocate_info);
+		const auto& memory_requirements = swap_chain_color_image->GetMemoryRequirements(m_logicalDevice);
+		const auto& memory_type_idx = FindMemoryType(memory_requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
+		vk::MemoryAllocateInfo allocate_info(memory_requirements.size, memory_type_idx);
+		swap_chain_color_image->SetMemory(m_logicalDevice, allocate_info);
 
-	swap_chain_depth_image->BindMemory(m_logicalDevice);
-	swap_chain_depth_image->SetImageView(m_logicalDevice,
-		hephics_helper::simple_create_info::get_swap_chain_depth_image_view_info(depth_format));
+		swap_chain_color_image->BindMemory(m_logicalDevice);
+		swap_chain_color_image->SetImageView(m_logicalDevice,
+			hephics_helper::simple_create_info::get_swap_chain_color_image_view_info(color_format));
+	}
+
+	{
+		auto& swap_chain_depth_image = m_ptrSwapChain->GetDepthImage();
+
+		vk::ImageCreateInfo image_create_info({}, vk::ImageType::e2D, depth_format,
+			vk::Extent3D(m_ptrSwapChain->GetExtent2D(), 1U), 1, 1, image_sample_count, vk::ImageTiling::eOptimal,
+			vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::SharingMode::eExclusive, queue_family_array);
+		swap_chain_depth_image->SetImage(m_logicalDevice, image_create_info);
+
+		const auto& memory_requirements = swap_chain_depth_image->GetMemoryRequirements(m_logicalDevice);
+		const auto& memory_type_idx = FindMemoryType(memory_requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
+		vk::MemoryAllocateInfo allocate_info(memory_requirements.size, memory_type_idx);
+		swap_chain_depth_image->SetMemory(m_logicalDevice, allocate_info);
+
+		swap_chain_depth_image->BindMemory(m_logicalDevice);
+		swap_chain_depth_image->SetImageView(m_logicalDevice,
+			hephics_helper::simple_create_info::get_swap_chain_depth_image_view_info(depth_format));
+	}
 
 	const auto& swap_chain_extent = m_ptrSwapChain->GetExtent2D();
 	vk::FramebufferCreateInfo framebuffer_info({}, m_ptrSwapChain->GetRenderPass().get(), {},
@@ -327,6 +351,11 @@ uint32_t hephics::VkInstance::FindMemoryType(const uint32_t& memory_type_filter,
 {
 	return hephics_helper::vk_init::find_memory_type(
 		m_physicalDevice, memory_type_filter, memory_prop_flags);
+}
+
+vk::SampleCountFlagBits hephics::VkInstance::GetMultiSampleCount() const
+{
+	return hephics_helper::vk_init::get_multi_sample_count(m_physicalDevice);
 }
 
 std::shared_ptr<vk_interface::component::CommandBuffer>& hephics::VkInstance::GetGraphicCommandBuffer(const std::string& purpose)

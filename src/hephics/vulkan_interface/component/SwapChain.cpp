@@ -32,7 +32,7 @@ void vk_interface::component::SwapChain::SetFramebuffers(const vk::UniqueDevice&
 	for (const auto& image_view : m_imageViews)
 	{
 		vk::FramebufferCreateInfo new_create_info = create_info;
-		auto attachments = std::vector{ image_view.get(), m_ptrDepthImage->GetView().get() };
+		auto attachments = std::vector{ m_ptrColorImage->GetView().get(), m_ptrDepthImage->GetView().get(), image_view.get() };
 		new_create_info.setAttachments(attachments);
 		m_framebuffers.emplace_back(logical_device->createFramebufferUnique(new_create_info));
 	}
@@ -87,6 +87,7 @@ void vk_interface::component::SwapChain::PrepareNextFrame()
 void vk_interface::component::SwapChain::Clear(const vk::UniqueDevice& logical_device)
 {
 	m_ptrDepthImage->Clear(logical_device);
+	m_ptrColorImage->Clear(logical_device);
 
 	for (auto& framebuffer : m_framebuffers)
 	{

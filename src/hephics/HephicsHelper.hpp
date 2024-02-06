@@ -98,6 +98,8 @@ namespace hephics_helper
 			const vk::PhysicalDevice& physical_device,
 			const uint32_t& memory_type_filter,
 			const vk::MemoryPropertyFlags& memory_prop_flags);
+
+		vk::SampleCountFlagBits get_multi_sample_count(const vk::PhysicalDevice& physical_device);
 	};
 
 	namespace simple_create_info
@@ -115,8 +117,10 @@ namespace hephics_helper
 
 		vk::ImageViewCreateInfo get_swap_chain_depth_image_view_info(const vk::Format& format);
 
+		vk::ImageViewCreateInfo get_swap_chain_color_image_view_info(const vk::Format& format);
+
 		std::vector<vk::AttachmentDescription> get_renderpass_attachment_descriptions(
-			const vk::Format& color_format, const vk::Format& depth_format);
+			const vk::SampleCountFlagBits& sample_count, const vk::Format& color_format, const vk::Format& depth_format);
 
 		vk::SubpassDependency get_renderpass_dependency();
 
