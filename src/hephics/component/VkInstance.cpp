@@ -181,9 +181,9 @@ void hephics::VkInstance::SetSwapChainFramebuffers()
 			vk::SharingMode::eExclusive, queue_family_array);
 		swap_chain_color_image->SetImage(m_logicalDevice, image_create_info);
 
-		const auto& memory_requirements = swap_chain_color_image->GetMemoryRequirements(m_logicalDevice);
-		const auto& memory_type_idx = FindMemoryType(memory_requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
-		vk::MemoryAllocateInfo allocate_info(memory_requirements.size, memory_type_idx);
+		const auto memory_requirements = swap_chain_color_image->GetMemoryRequirements(m_logicalDevice);
+		const auto memory_type_id = FindMemoryType(memory_requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
+		vk::MemoryAllocateInfo allocate_info(memory_requirements.size, memory_type_id);
 		swap_chain_color_image->SetMemory(m_logicalDevice, allocate_info);
 
 		swap_chain_color_image->BindMemory(m_logicalDevice);
@@ -199,9 +199,9 @@ void hephics::VkInstance::SetSwapChainFramebuffers()
 			vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::SharingMode::eExclusive, queue_family_array);
 		swap_chain_depth_image->SetImage(m_logicalDevice, image_create_info);
 
-		const auto& memory_requirements = swap_chain_depth_image->GetMemoryRequirements(m_logicalDevice);
-		const auto& memory_type_idx = FindMemoryType(memory_requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
-		vk::MemoryAllocateInfo allocate_info(memory_requirements.size, memory_type_idx);
+		const auto memory_requirements = swap_chain_depth_image->GetMemoryRequirements(m_logicalDevice);
+		const auto memory_type_id = FindMemoryType(memory_requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
+		vk::MemoryAllocateInfo allocate_info(memory_requirements.size, memory_type_id);
 		swap_chain_depth_image->SetMemory(m_logicalDevice, allocate_info);
 
 		swap_chain_depth_image->BindMemory(m_logicalDevice);

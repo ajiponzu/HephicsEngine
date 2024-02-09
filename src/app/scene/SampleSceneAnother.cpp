@@ -22,6 +22,9 @@ void SampleSceneAnother::Initialize(const std::shared_ptr<hephics::window::Windo
 					m_nextSceneName = "first";
 					Scene::ResetScene();
 					break;
+				case GLFW_KEY_SPACE:
+					WriteScreenImage();
+					break;
 				}
 			}
 		});

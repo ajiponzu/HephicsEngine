@@ -15,8 +15,6 @@ void hephics::Scene::Initialize(const std::shared_ptr<window::Window>& ptr_windo
 
 	copy_command_buffer->EndRecordingCommands();
 
-	std::cout << std::endl << std::endl;
-
 	std::vector<vk::CommandBuffer> submitted_command_buffers;
 	submitted_command_buffers.push_back(copy_command_buffer->GetCommandBuffer().get());
 
@@ -74,4 +72,43 @@ void hephics::Scene::ResetScene()
 	GPUHandler::WaitIdle();
 	hephics::asset::AssetManager::Reset();
 	vk_interface::component::ShaderProvider::Reset();
+}
+
+void hephics::Scene::WriteScreenImage() const
+{
+	const auto& gpu_instance = GPUHandler::GetInstance();
+
+	const auto& logical_device = gpu_instance->GetLogicalDevice();
+	const auto& swap_chain = gpu_instance->GetSwapChain();
+	auto& copy_command_buffer = gpu_instance->GetGraphicCommandBuffer("copy");
+
+	const auto image_wid = swap_chain->GetExtent2D().width;
+	const auto image_high = swap_chain->GetExtent2D().height;
+
+	const auto buffer_size = image_wid * image_high * 4;
+
+	vk::BufferImageCopy image_copy_region(0, 0, 0,
+		vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1),
+		vk::Offset3D(0, 0, 0), vk::Extent3D(swap_chain->GetExtent2D(), 1U));
+
+	auto staging_buffer = std::make_shared<hephics_helper::StagingBuffer>(gpu_instance, buffer_size);
+
+	copy_command_buffer->ResetCommands({});
+	copy_command_buffer->BeginRecordingCommands({});
+	copy_command_buffer->GetCommandBuffer()->copyImageToBuffer(swap_chain->GetCurrentImage(), vk::ImageLayout::eTransferSrcOptimal,
+		staging_buffer->GetBuffer().get(), image_copy_region);
+	copy_command_buffer->EndRecordingCommands();
+
+	std::vector<vk::CommandBuffer> submitted_command_buffers;
+	submitted_command_buffers.push_back(copy_command_buffer->GetCommandBuffer().get());
+
+	vk::SubmitInfo submit_info({}, {}, submitted_command_buffers);
+	gpu_instance->SubmitCopyGraphicResource(submit_info);
+
+	auto staging_map_address = staging_buffer->Mapping(logical_device);
+	cv::Mat srcreen_image(image_high, image_wid, CV_8UC4, staging_map_address);
+	const auto current_time = std::chrono::system_clock::now();
+	std::chrono::sys_seconds sec_tp = std::chrono::floor<std::chrono::seconds>(current_time);
+	cv::imwrite(std::format("output/screenshot/screenshot_{:%Y_%m%d_%H%M%S}.png", sec_tp), srcreen_image);
+	staging_buffer->Unmapping(logical_device);
 }

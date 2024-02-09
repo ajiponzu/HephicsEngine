@@ -440,6 +440,8 @@ namespace hephics
 		static auto& GetStagingBuffers() { return s_staging_buffers; }
 
 		static void ResetScene();
+
+		void WriteScreenImage() const;
 	};
 
 	class App

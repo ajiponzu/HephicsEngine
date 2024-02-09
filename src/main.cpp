@@ -5,7 +5,7 @@
 int main()
 {
 #ifndef _DEBUG
-	::FreeConsole();
+	//::FreeConsole();
 #endif
 
 	hephics::Engine::Invoke(std::move(std::make_unique<SampleApp>()));

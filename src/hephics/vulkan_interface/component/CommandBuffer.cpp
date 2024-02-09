@@ -108,7 +108,7 @@ void vk_interface::component::CommandBuffer::CopyTexture(const std::shared_ptr<B
 		vk::Offset3D(0, 0, 0), vk::Extent3D(extent, 1U));
 
 	m_commandBuffer->copyBufferToImage(staging_buffer->GetBuffer().get(), texture_image->GetImage().get(),
-		vk::ImageLayout::eTransferDstOptimal, { image_copy_region });
+		vk::ImageLayout::eTransferDstOptimal, image_copy_region);
 }
 
 void vk_interface::component::CommandBuffer::SetCommandBuffer(std::vector<vk::UniqueCommandBuffer>&& command_buffers)

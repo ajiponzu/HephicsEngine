@@ -172,22 +172,22 @@ void hephics::asset::Texture::CopyTexture(const std::shared_ptr<VkInstance>& gpu
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	auto& command_buffer = gpu_instance->GetGraphicCommandBuffer("copy");
 
-	const auto& cv_mat_size = cv_mat->size();
-	const auto& buffer_size = cv_mat->total() * cv_mat->elemSize();
+	const auto cv_mat_size = cv_mat->size();
+	const auto buffer_size = cv_mat->total() * cv_mat->elemSize();
 
 	auto staging_buffer = std::make_shared<hephics_helper::StagingBuffer>(gpu_instance, buffer_size);
 	auto staging_map_address = staging_buffer->Mapping(logical_device);
 	std::memcpy(staging_map_address, cv_mat->data, buffer_size);
 	staging_buffer->Unmapping(logical_device);
 
-	command_buffer->TransitionImageCommandLayout(GetImage(), vk::Format::eR8G8B8A8Srgb,
+	command_buffer->TransitionImageCommandLayout(m_ptrImage, vk::Format::eR8G8B8A8Srgb,
 		{ vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal }, m_miplevel);
-	command_buffer->CopyTexture(staging_buffer, GetImage(),
+	command_buffer->CopyTexture(staging_buffer, m_ptrImage,
 		vk::Extent2D{ static_cast<uint32_t>(cv_mat_size.width), static_cast<uint32_t>(cv_mat_size.height) });
 	if (m_miplevel > 1)
 		GenerateMipmaps(gpu_instance, cv_mat_size.width, cv_mat_size.height);
 	else
-		command_buffer->TransitionImageCommandLayout(GetImage(), vk::Format::eR8G8B8A8Srgb,
+		command_buffer->TransitionImageCommandLayout(m_ptrImage, vk::Format::eR8G8B8A8Srgb,
 			{ vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal }, m_miplevel);
 
 	auto& staging_buffers = hephics::Scene::GetStagingBuffers();
@@ -199,13 +199,13 @@ void hephics::asset::Asset3D::CopyVertexBuffer(const std::shared_ptr<VkInstance>
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	auto& command_buffer = gpu_instance->GetGraphicCommandBuffer("copy");
 
-	const auto& buffer_size = GetVertexBuffer()->GetSize();
+	const auto& buffer_size = m_ptrVertexBuffer->GetSize();
 	auto staging_buffer = std::make_shared<hephics_helper::StagingBuffer>(gpu_instance, buffer_size);
 	auto staging_map_address = staging_buffer->Mapping(logical_device);
-	std::memcpy(staging_map_address, GetVertices().data(), buffer_size);
+	std::memcpy(staging_map_address, m_vertices.data(), buffer_size);
 	staging_buffer->Unmapping(logical_device);
 
-	command_buffer->CopyBuffer(staging_buffer, GetVertexBuffer(), buffer_size);
+	command_buffer->CopyBuffer(staging_buffer, m_ptrVertexBuffer, buffer_size);
 
 	auto& staging_buffers = hephics::Scene::GetStagingBuffers();
 	staging_buffers.emplace_back(std::move(staging_buffer));
@@ -216,13 +216,13 @@ void hephics::asset::Asset3D::CopyIndexBuffer(const std::shared_ptr<VkInstance>&
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	auto& command_buffer = gpu_instance->GetGraphicCommandBuffer("copy");
 
-	const auto& buffer_size = GetIndexBuffer()->GetSize();
+	const auto& buffer_size = m_ptrIndexBuffer->GetSize();
 	auto staging_buffer = std::make_shared<hephics_helper::StagingBuffer>(gpu_instance, buffer_size);
 	auto staging_map_address = staging_buffer->Mapping(logical_device);
-	std::memcpy(staging_map_address, GetIndices().data(), buffer_size);
+	std::memcpy(staging_map_address, m_indices.data(), buffer_size);
 	staging_buffer->Unmapping(logical_device);
 
-	command_buffer->CopyBuffer(staging_buffer, GetIndexBuffer(), buffer_size);
+	command_buffer->CopyBuffer(staging_buffer, m_ptrIndexBuffer, buffer_size);
 
 	auto& staging_buffers = hephics::Scene::GetStagingBuffers();
 	staging_buffers.emplace_back(std::move(staging_buffer));

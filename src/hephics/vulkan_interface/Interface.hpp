@@ -358,6 +358,8 @@ namespace vk_interface
 
 			const auto& GetCurrentFrameId() const { return m_currentFrameId; }
 
+			const auto& GetCurrentImage() const { return m_images.at(m_currentFrameId); }
+
 			const auto& GetNextImageId() const { return m_nextImageId; }
 
 			const auto& GetCurrentSwapFence() const { return m_swapFences.at(m_currentFrameId); }
@@ -506,12 +508,12 @@ namespace vk_interface
 			m_instance = std::move(other.m_instance);
 			m_windowSurface = std::move(other.m_windowSurface);
 			m_logicalDevice = std::move(other.m_logicalDevice);
-	}
+		}
 
 		const auto& GetLogicalDevice() const { return m_logicalDevice; }
 		const auto& GetSwapChain() const { return m_ptrSwapChain; }
 		const auto& GetPhysicalDevice() const { return m_physicalDevice; }
 		const auto& GetWindowSurface() const { return m_windowSurface; }
 		const auto& GetQueueFamilyIndices() const { return m_queueFamilyIndices; }
-};
+	};
 };
