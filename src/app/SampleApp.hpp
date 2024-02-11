@@ -50,7 +50,7 @@ private:
 	virtual void SetPipeline(const std::shared_ptr<hephics::VkInstance>& gpu_instance) override;
 
 public:
-	SampleActor() = default;
+	SampleActor() {}
 	~SampleActor() {}
 
 	virtual void Initialize(const std::shared_ptr<hephics::VkInstance>& gpu_instance) override;

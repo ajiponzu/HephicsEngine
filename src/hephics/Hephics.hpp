@@ -80,6 +80,7 @@ namespace hephics
 			static void SetMouseScroll(const double& x_offset, const double& y_offset);
 			static const glm::vec2& GetCursorPosition();
 			static const glm::vec2& GetMouseScroll();
+			static const bool CheckPressKey(const int32_t& key);
 		};
 	};
 

@@ -62,6 +62,9 @@ void hephics::Scene::Render()
 		swap_chain->GetRenderingSubmitInfo(submitted_command_buffers, vk::PipelineStageFlagBits::eColorAttachmentOutput);
 	gpu_instance->SubmitRenderingCommand(submit_info);
 
+	if (window::Manager::CheckPressKey(GLFW_KEY_SPACE))
+		WriteScreenImage();
+
 	const auto present_info = swap_chain->GetPresentInfo();
 	gpu_instance->PresentFrame(present_info);
 	swap_chain->PrepareNextFrame();

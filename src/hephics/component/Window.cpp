@@ -58,6 +58,7 @@ static void mouse_scroll_callback(::GLFWwindow* ptr_window, double xoffset, doub
 {
 	using CallbackType = hephics::window::MouseScrollCallback;
 	hephics::window::Manager::SetMouseScroll(xoffset, yoffset);
+	std::cout << std::format("scroll: ({}, {})", xoffset, yoffset) << std::endl;
 	try
 	{
 		const auto& callback_variant = hephics::window::Window::GetCallback<CallbackType>(ptr_window);
@@ -219,6 +220,12 @@ const glm::vec2& hephics::window::Manager::GetCursorPosition()
 const glm::vec2& hephics::window::Manager::GetMouseScroll()
 {
 	return s_mouseScroll;
+}
+
+const bool hephics::window::Manager::CheckPressKey(const int32_t& key)
+{
+	const auto glfw_window = s_ptrWindow->GetPtrWindow();
+	return ::glfwGetKey(glfw_window, key) == GLFW_PRESS;
 }
 
 void hephics::window::Manager::SetCursorPosition(const double& pos_x, const double& pos_y)
