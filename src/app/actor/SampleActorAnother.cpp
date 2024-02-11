@@ -211,8 +211,8 @@ void SampleActorAnother::Update(const std::shared_ptr<hephics::VkInstance>& gpu_
 		auto& cursor_uniform_buffer = m_ptrShaderAttachment->GetUniformBuffersMap().at("cursor").at(current_frame_id);
 		auto cursor_uniform_address = cursor_uniform_buffer->Mapping(logical_device);
 
-		const auto& window = hephics::window::WindowManager::GetWindow(gpu_instance->GetWindowTitle());
-		const auto& cursor_pos = hephics::window::WindowManager::GetCursorPosition(gpu_instance->GetWindowTitle());
+		const auto& window = hephics::window::Manager::GetWindow();
+		const auto& cursor_pos = hephics::window::Manager::GetCursorPosition();
 		const auto& diff_x = cursor_pos[0] - window->GetWidth() / 2.0f;
 		const auto& diff_y = cursor_pos[1] - window->GetHeight() / 2.0f;
 		glm::vec2 new_cursor_pos{ diff_x, diff_y };
@@ -225,8 +225,8 @@ void SampleActorAnother::Update(const std::shared_ptr<hephics::VkInstance>& gpu_
 		auto& position_uniform_buffer = m_ptrShaderAttachment->GetUniformBuffersMap().at("position").at(current_frame_id);
 		auto position_uniform_address = position_uniform_buffer->Mapping(logical_device);
 
-		const auto& window = hephics::window::WindowManager::GetWindow(gpu_instance->GetWindowTitle());
-		const auto& cursor_pos = hephics::window::WindowManager::GetCursorPosition(gpu_instance->GetWindowTitle());
+		const auto& window = hephics::window::Manager::GetWindow();
+		const auto& cursor_pos = hephics::window::Manager::GetCursorPosition();
 		const auto& diff_x = cursor_pos[0] / window->GetWidth() - 0.5f;
 		const auto& diff_y = cursor_pos[1] / window->GetHeight() - 0.5f;
 		m_ptrPosition->model = glm::mat4(1.0f);

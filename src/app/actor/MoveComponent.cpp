@@ -16,8 +16,7 @@ void MoveComponent::Update(hephics::actor::Actor* const owner, const std::shared
 	static constexpr auto HORIZONTAL_MOVEMENT = 2.0f;
 	static constexpr auto DEPTH_MOVEMENT = 2.0f;
 
-	const auto& cur_window_title = gpu_instance->GetWindowTitle();
-	const auto& window = hephics::window::WindowManager::GetWindow(cur_window_title);
+	const auto& window = hephics::window::Manager::GetWindow();
 
 	auto& owner_position = owner->GetPosition();
 	if (check_press_key(window, GLFW_KEY_A))

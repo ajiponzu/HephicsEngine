@@ -29,12 +29,11 @@ namespace hephics
 		private:
 			static std::unordered_map<const ::GLFWwindow*,
 				std::unordered_map<std::string, CallbackVariant>> s_callbackDictionary;
-			static std::unordered_map<const ::GLFWwindow*, std::string> s_windowTitleDictionary;
 
 			void SetCallbacks();
 
 		protected:
-			friend class WindowManager;
+			friend class Manager;
 			::GLFWwindow* m_ptrWindow;
 			WindowInfo m_info;
 
@@ -55,34 +54,32 @@ namespace hephics
 			void SetCallback(MouseScrollCallback&& callback) const;
 			void SetCallback(WindowResizedCallback&& callback) const;
 
-			static const std::string& GetWindowTitleFromDictionary(const ::GLFWwindow* const ptr_window);
-
 			template<typename T>
 			static CallbackVariant GetCallback(const ::GLFWwindow* const ptr_window);
 		};
 
-		class WindowManager
+		class Manager
 		{
 		private:
-			static std::unordered_map<std::string, std::shared_ptr<Window>> s_windowDictionary;
+			static std::shared_ptr<Window> s_ptrWindow;
 			static glm::vec2 s_cursorPosition;
 			static glm::vec2 s_mouseScroll;
 
-			WindowManager() = delete;
-			~WindowManager() = delete;
+			Manager() = delete;
+			~Manager() = delete;
 
 		public:
 			static void Initialize();
 			static void Shutdown();
 
-			static void AddWindow(const WindowInfo& info);
+			static void InitializeWindow(const WindowInfo& info);
 
-			static const std::shared_ptr<Window>& GetWindow(const std::string& window_key);
-			static void SetWindowSize(const std::string& window_key, const int32_t& width, const int32_t& height);
+			static const std::shared_ptr<Window>& GetWindow();
+			static void SetWindowSize(const int32_t& width, const int32_t& height);
 			static void SetCursorPosition(const double& pos_x, const double& pos_y);
 			static void SetMouseScroll(const double& x_offset, const double& y_offset);
-			static const glm::vec2& GetCursorPosition(const std::string& window_key);
-			static const glm::vec2& GetMouseScroll(const std::string& window_key);
+			static const glm::vec2& GetCursorPosition();
+			static const glm::vec2& GetMouseScroll();
 		};
 	};
 
@@ -91,15 +88,14 @@ namespace hephics
 	protected:
 		friend class Renderer;
 
-		std::string m_windowTitle;
 		std::vector<std::vector<std::shared_ptr<vk_interface::component::CommandBuffer>>> m_graphicCommandBuffers;
 
 		virtual void SetInstance(const vk::ApplicationInfo& app_info);
-		virtual void SetWindowSurface(const std::shared_ptr<window::Window>& window);
+		virtual void SetWindowSurface();
 		virtual void SetPhysicalDevice();
 		virtual void SetLogicalDeviceAndQueue();
 
-		virtual void SetSwapChain(const std::shared_ptr<window::Window>& window);
+		virtual void SetSwapChain();
 		virtual void SetSwapChainImageViews();
 		virtual void SetSwapChainRenderPass();
 		virtual void SetSwapChainFramebuffers();
@@ -110,15 +106,13 @@ namespace hephics
 
 	public:
 
-		VkInstance() = default;
-		VkInstance(const std::shared_ptr<window::Window>& window);
+		VkInstance();
 		~VkInstance()
 		{
 			if (m_logicalDevice)
 				m_logicalDevice->waitIdle();
 		}
 
-		void Initialize(const std::shared_ptr<window::Window>& window);
 		void ResetSwapChain(::GLFWwindow* const window);
 
 		void SubmitCopyGraphicResource(const vk::SubmitInfo& submit_info);
@@ -135,7 +129,6 @@ namespace hephics
 
 		virtual vk::SampleCountFlagBits GetMultiSampleCount() const;
 
-		const auto& GetWindowTitle() const { return m_windowTitle; }
 		auto& GetGraphicCommandBuffers() { return m_graphicCommandBuffers.at(m_ptrSwapChain->GetNextImageId()); }
 		std::shared_ptr<vk_interface::component::CommandBuffer>& GetGraphicCommandBuffer(const std::string& purpose);
 	};
@@ -414,7 +407,7 @@ namespace hephics
 	class Scene
 	{
 	protected:
-		static std::vector<std::shared_ptr<hephics_helper::StagingBuffer>> s_staging_buffers;
+		static std::vector<std::shared_ptr<hephics_helper::StagingBuffer>> s_stagingBuffers;
 
 		std::vector<std::shared_ptr<actor::Actor>> m_actors;
 		std::string m_sceneName;
@@ -429,7 +422,7 @@ namespace hephics
 		Scene(const std::string& scene_name) : m_sceneName(scene_name) {}
 		~Scene() {}
 
-		virtual void Initialize(const std::shared_ptr<window::Window>& ptr_window);
+		virtual void Initialize(const std::shared_ptr<window::Window>& window);
 		virtual void Update();
 		virtual void Render();
 
@@ -437,7 +430,7 @@ namespace hephics
 		const auto& IsChangedScene() const { return m_isChangedScene; }
 		const auto& GetNextSceneName() const { return m_nextSceneName; }
 		const auto& GetWindowTitle() const { return m_windowTitle; }
-		static auto& GetStagingBuffers() { return s_staging_buffers; }
+		static auto& GetStagingBuffers() { return s_stagingBuffers; }
 
 		static void ResetScene();
 
@@ -479,7 +472,7 @@ namespace hephics
 
 		static void AddPurpose(const std::vector<std::string>& purpose_list);
 
-		static void AddInstance(const std::shared_ptr<window::Window>& ptr_window);
+		static void InitializeInstance();
 
 		static auto& GetInstance() { return s_ptrGPUInstance; }
 
@@ -509,7 +502,7 @@ namespace hephics
 		{
 			GPUHandler::Shutdown();
 			std::this_thread::sleep_for(std::chrono::milliseconds(30));
-			window::WindowManager::Shutdown();
+			window::Manager::Shutdown();
 		}
 	};
 };

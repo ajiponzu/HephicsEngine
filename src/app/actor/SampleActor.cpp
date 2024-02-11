@@ -157,7 +157,7 @@ void SampleActor::Update(const std::shared_ptr<hephics::VkInstance>& gpu_instanc
 	auto uniform_address = uniform_buffer->Mapping(logical_device);
 
 	static glm::vec2 scroll;
-	const auto& mouse_scroll = hephics::window::WindowManager::GetMouseScroll(gpu_instance->GetWindowTitle());
+	const auto& mouse_scroll = hephics::window::Manager::GetMouseScroll();
 	scroll += mouse_scroll;
 
 	m_ptrPosition->model = glm::rotate(glm::mat4(1.0), glm::radians(60.0f), glm::vec3(0.0f, 0.0f, 1.0f));

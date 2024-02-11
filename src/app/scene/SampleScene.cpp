@@ -1,10 +1,8 @@
 #include "../SampleApp.hpp"
 
-void SampleScene::Initialize(const std::shared_ptr<hephics::window::Window>& ptr_window)
+void SampleScene::Initialize(const std::shared_ptr<hephics::window::Window>& window)
 {
-	m_windowTitle = ptr_window->GetWindowTitle();
-
-	ptr_window->SetCallback(
+	window->SetCallback(
 		[&](GLFWwindow* window, int key, int scancode, int action, int mods)
 		{
 			switch (action)
@@ -27,7 +25,7 @@ void SampleScene::Initialize(const std::shared_ptr<hephics::window::Window>& ptr
 		});
 	m_actors.emplace_back(std::make_shared<SampleActor>());
 
-	Scene::Initialize(ptr_window);
+	Scene::Initialize(window);
 }
 
 void SampleScene::Update()

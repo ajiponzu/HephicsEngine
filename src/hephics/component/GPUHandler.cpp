@@ -13,9 +13,9 @@ void hephics::GPUHandler::AddPurpose(const std::vector<std::string>& purpose_lis
 	}
 }
 
-void hephics::GPUHandler::AddInstance(const std::shared_ptr<window::Window>& window)
+void hephics::GPUHandler::InitializeInstance()
 {
-	s_ptrGPUInstance = std::make_shared<VkInstance>(window);
+	s_ptrGPUInstance = std::make_shared<VkInstance>();
 }
 
 const size_t& hephics::GPUHandler::GetPurposeIdx(const std::string& purpose)

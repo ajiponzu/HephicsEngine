@@ -3,12 +3,10 @@
 std::unordered_map<const ::GLFWwindow*,
 	std::unordered_map<std::string, hephics::window::CallbackVariant>> hephics::window::Window::s_callbackDictionary;
 
-std::unordered_map<const ::GLFWwindow*, std::string> hephics::window::Window::s_windowTitleDictionary;
+std::shared_ptr<hephics::window::Window> hephics::window::Manager::s_ptrWindow;
 
-std::unordered_map<std::string, std::shared_ptr<hephics::window::Window>> hephics::window::WindowManager::s_windowDictionary;
-
-glm::vec2 hephics::window::WindowManager::s_cursorPosition;
-glm::vec2 hephics::window::WindowManager::s_mouseScroll;
+glm::vec2 hephics::window::Manager::s_cursorPosition;
+glm::vec2 hephics::window::Manager::s_mouseScroll;
 
 static void input_key_callback(::GLFWwindow* ptr_window, int key, int scancode, int action, int mods)
 {
@@ -28,7 +26,7 @@ static void input_key_callback(::GLFWwindow* ptr_window, int key, int scancode, 
 static void cursor_position_callback(::GLFWwindow* ptr_window, double xpos, double ypos)
 {
 	using CallbackType = hephics::window::CursorPositionCallback;
-	hephics::window::WindowManager::SetCursorPosition(xpos, ypos);
+	hephics::window::Manager::SetCursorPosition(xpos, ypos);
 	try
 	{
 		const auto& callback_variant = hephics::window::Window::GetCallback<CallbackType>(ptr_window);
@@ -59,7 +57,7 @@ static void mouse_button_callback(::GLFWwindow* ptr_window, int button, int acti
 static void mouse_scroll_callback(::GLFWwindow* ptr_window, double xoffset, double yoffset)
 {
 	using CallbackType = hephics::window::MouseScrollCallback;
-	hephics::window::WindowManager::SetMouseScroll(xoffset, yoffset);
+	hephics::window::Manager::SetMouseScroll(xoffset, yoffset);
 	try
 	{
 		const auto& callback_variant = hephics::window::Window::GetCallback<CallbackType>(ptr_window);
@@ -76,7 +74,7 @@ static void window_resized_callback(::GLFWwindow* ptr_window, int width, int hei
 {
 	using CallbackType = hephics::window::WindowResizedCallback;
 	auto& gpu_instance = hephics::GPUHandler::GetInstance();
-	hephics::window::WindowManager::SetWindowSize(gpu_instance->GetWindowTitle(), width, height);
+	hephics::window::Manager::SetWindowSize(width, height);
 	gpu_instance->ResetSwapChain(ptr_window);
 
 	try
@@ -93,7 +91,6 @@ static void window_resized_callback(::GLFWwindow* ptr_window, int width, int hei
 
 void hephics::window::Window::SetCallbacks()
 {
-	s_windowTitleDictionary.emplace(m_ptrWindow, GetWindowTitle());
 	::glfwSetKeyCallback(m_ptrWindow, input_key_callback);
 	::glfwSetCursorPosCallback(m_ptrWindow, cursor_position_callback);
 	::glfwSetMouseButtonCallback(m_ptrWindow, mouse_button_callback);
@@ -174,14 +171,6 @@ void hephics::window::Window::SetCallback(WindowResizedCallback&& callback) cons
 	}
 }
 
-const std::string& hephics::window::Window::GetWindowTitleFromDictionary(const::GLFWwindow* const ptr_window)
-{
-	if (!s_windowTitleDictionary.contains(ptr_window))
-		throw std::runtime_error("ptr_window: not found");
-
-	return s_windowTitleDictionary.at(ptr_window);
-}
-
 template<typename T>
 hephics::window::CallbackVariant hephics::window::Window::GetCallback(const ::GLFWwindow* const ptr_window)
 {
@@ -197,66 +186,55 @@ hephics::window::CallbackVariant hephics::window::Window::GetCallback(const ::GL
 	return callback_dictionary.at(callback_tag);
 }
 
-void hephics::window::WindowManager::Initialize()
+void hephics::window::Manager::Initialize()
 {
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 }
 
-void hephics::window::WindowManager::Shutdown()
+void hephics::window::Manager::Shutdown()
 {
-	for (auto& [_, ptr_window] : s_windowDictionary)
-	{
-		auto ptr_glfw_window = ptr_window->GetPtrWindow();
-		if (ptr_glfw_window != nullptr)
-			::glfwDestroyWindow(ptr_glfw_window);
-	}
+	auto ptr_glfw_window = s_ptrWindow->GetPtrWindow();
+	if (ptr_glfw_window != nullptr)
+		::glfwDestroyWindow(ptr_glfw_window);
 	::glfwTerminate();
 }
 
-void hephics::window::WindowManager::AddWindow(const WindowInfo& info)
+void hephics::window::Manager::InitializeWindow(const WindowInfo& info)
 {
-	s_windowDictionary.emplace(info.title, std::make_shared<Window>(info));
+	s_ptrWindow = std::make_shared<Window>(info);
 }
 
 const std::shared_ptr<hephics::window::Window>&
-hephics::window::WindowManager::GetWindow(const std::string& window_key)
+hephics::window::Manager::GetWindow()
 {
-	if (!s_windowDictionary.contains(window_key))
-		throw std::runtime_error("window: not found");
-
-	return s_windowDictionary.at(window_key);
+	return s_ptrWindow;
 }
 
-const glm::vec2& hephics::window::WindowManager::GetCursorPosition(const std::string& window_key)
+const glm::vec2& hephics::window::Manager::GetCursorPosition()
 {
 	return s_cursorPosition;
 }
 
-const glm::vec2& hephics::window::WindowManager::GetMouseScroll(const std::string& window_key)
+const glm::vec2& hephics::window::Manager::GetMouseScroll()
 {
 	return s_mouseScroll;
 }
 
-void hephics::window::WindowManager::SetCursorPosition(const double& pos_x, const double& pos_y)
+void hephics::window::Manager::SetCursorPosition(const double& pos_x, const double& pos_y)
 {
 	s_cursorPosition[0] = static_cast<float_t>(pos_x);
 	s_cursorPosition[1] = static_cast<float_t>(pos_y);
 }
 
-void hephics::window::WindowManager::SetMouseScroll(const double& x_offset, const double& y_offset)
+void hephics::window::Manager::SetMouseScroll(const double& x_offset, const double& y_offset)
 {
 	s_mouseScroll[0] = static_cast<float_t>(x_offset);
 	s_mouseScroll[1] = static_cast<float_t>(y_offset);
 }
 
-void hephics::window::WindowManager::SetWindowSize(
-	const std::string& window_key, const int32_t& width, const int32_t& height)
+void hephics::window::Manager::SetWindowSize(const int32_t& width, const int32_t& height)
 {
-	if (!s_windowDictionary.contains(window_key))
-		throw std::runtime_error("window: not found");
-
-	auto& window = s_windowDictionary.at(window_key);
-	window->m_info.width = width;
-	window->m_info.height = height;
+	s_ptrWindow->m_info.width = width;
+	s_ptrWindow->m_info.height = height;
 }

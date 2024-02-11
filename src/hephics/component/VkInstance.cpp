@@ -33,8 +33,10 @@ void hephics::VkInstance::SetInstance(const vk::ApplicationInfo& app_info)
 #endif
 }
 
-void hephics::VkInstance::SetWindowSurface(const std::shared_ptr<window::Window>& window)
+void hephics::VkInstance::SetWindowSurface()
 {
+	const auto& window = window::Manager::GetWindow();
+
 	::VkSurfaceKHR surface;
 	if (::glfwCreateWindowSurface(::VkInstance(m_instance.get()), window->GetPtrWindow(), nullptr, &surface)
 		!= ::VkResult::VK_SUCCESS)
@@ -109,8 +111,9 @@ void hephics::VkInstance::SetLogicalDeviceAndQueue()
 		});
 }
 
-void hephics::VkInstance::SetSwapChain(const std::shared_ptr<window::Window>& window)
+void hephics::VkInstance::SetSwapChain()
 {
+	const auto& window = window::Manager::GetWindow();
 	const auto swap_chain_support = hephics_helper::vk_init::query_swap_chain_support(m_physicalDevice, m_windowSurface);
 
 	const auto surface_format = hephics_helper::vk_init::choose_swap_surface_format(swap_chain_support.formats,
@@ -260,23 +263,18 @@ void hephics::VkInstance::SetCommandBuffers()
 	m_graphicCommandBuffers = std::move(graphic_command_buffers);
 }
 
-hephics::VkInstance::VkInstance(const std::shared_ptr<window::Window>& ptr_window)
+hephics::VkInstance::VkInstance()
 	: Instance()
 {
-	Initialize(ptr_window);
-}
+	SetInstance(hephics_helper::simple_create_info::get_application_info(
+		window::Manager::GetWindow()->GetWindowTitle()));
 
-void hephics::VkInstance::Initialize(const std::shared_ptr<window::Window>& window)
-{
-	m_windowTitle = window->GetWindowTitle();
-	SetInstance(hephics_helper::simple_create_info::get_application_info(m_windowTitle));
-
-	SetWindowSurface(window);
+	SetWindowSurface();
 
 	SetPhysicalDevice();
 	SetLogicalDeviceAndQueue();
 
-	SetSwapChain(window);
+	SetSwapChain();
 	SetSwapChainImageViews();
 	SetSwapChainRenderPass();
 	SetSwapChainFramebuffers();
@@ -296,12 +294,10 @@ void hephics::VkInstance::ResetSwapChain(::GLFWwindow* const ptr_window)
 		::glfwWaitEvents();
 	}
 
-	const auto& window = hephics::window::WindowManager::GetWindow(m_windowTitle);
-
 	m_logicalDevice->waitIdle();
 	m_ptrSwapChain->Clear(m_logicalDevice);
 
-	SetSwapChain(window);
+	SetSwapChain();
 	SetSwapChainImageViews();
 	SetSwapChainFramebuffers();
 	SetSwapChainSyncObjects();

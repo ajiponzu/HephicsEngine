@@ -1,8 +1,8 @@
 #include "../Hephics.hpp"
 
-std::vector<std::shared_ptr<hephics_helper::StagingBuffer>> hephics::Scene::s_staging_buffers;
+std::vector<std::shared_ptr<hephics_helper::StagingBuffer>> hephics::Scene::s_stagingBuffers;
 
-void hephics::Scene::Initialize(const std::shared_ptr<window::Window>& ptr_window)
+void hephics::Scene::Initialize(const std::shared_ptr<window::Window>& window)
 {
 	auto& gpu_instance = hephics::GPUHandler::GetInstance();
 	auto& copy_command_buffer = gpu_instance->GetGraphicCommandBuffer("copy");
