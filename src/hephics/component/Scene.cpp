@@ -2,16 +2,16 @@
 
 std::vector<std::shared_ptr<hephics_helper::StagingBuffer>> hephics::Scene::s_stagingBuffers;
 
-void hephics::Scene::Initialize(const std::shared_ptr<window::Window>& window)
+void hephics::Scene::Initialize()
 {
-	auto& gpu_instance = hephics::GPUHandler::GetInstance();
-	auto& copy_command_buffer = gpu_instance->GetGraphicCommandBuffer("copy");
+	const auto& gpu_instance = GPUHandler::GetInstance();
+	const auto& copy_command_buffer = gpu_instance->GetGraphicCommandBuffer("copy");
 
 	copy_command_buffer->ResetCommands({});
 	copy_command_buffer->BeginRecordingCommands({});
 
-	for (auto& actor : m_actors)
-		actor->Initialize(gpu_instance);
+	for (const auto& actor : m_actors)
+		actor->Initialize();
 
 	copy_command_buffer->EndRecordingCommands();
 
@@ -25,32 +25,32 @@ void hephics::Scene::Initialize(const std::shared_ptr<window::Window>& window)
 
 void hephics::Scene::Update()
 {
-	auto& gpu_instance = hephics::GPUHandler::GetInstance();
-	auto& logical_device = gpu_instance->GetLogicalDevice();
-	auto& swap_chain = gpu_instance->GetSwapChain();
+	const auto& gpu_instance = GPUHandler::GetInstance();
+	const auto& logical_device = gpu_instance->GetLogicalDevice();
+	const auto& swap_chain = gpu_instance->GetSwapChain();
 
 	swap_chain->AcquireNextImageIdx(logical_device); // update: next_image_idx, before using command buffer
 	swap_chain->WaitFence(logical_device);
 
-	for (auto& actor : m_actors)
-		actor->Update(gpu_instance);
+	for (const auto& actor : m_actors)
+		actor->Update();
 
 	swap_chain->CancelWaitFence(logical_device);
 }
 
 void hephics::Scene::Render()
 {
-	auto& gpu_instance = hephics::GPUHandler::GetInstance();
+	const auto& gpu_instance = GPUHandler::GetInstance();
 	const auto& swap_chain = gpu_instance->GetSwapChain();
 	const auto& command_buffers = gpu_instance->GetGraphicCommandBuffers();
-	auto& render_command_buffer = gpu_instance->GetGraphicCommandBuffer("render");
+	const auto& render_command_buffer = gpu_instance->GetGraphicCommandBuffer("render");
 
 	render_command_buffer->ResetCommands({});
 	render_command_buffer->BeginRecordingCommands({});
 	render_command_buffer->BeginRenderPass(swap_chain, vk::SubpassContents::eInline);
 
-	for (auto& actor : m_actors)
-		actor->Render(gpu_instance);
+	for (const auto& actor : m_actors)
+		actor->Render();
 
 	render_command_buffer->EndRenderPass();
 	render_command_buffer->EndRecordingCommands();
@@ -73,7 +73,7 @@ void hephics::Scene::Render()
 void hephics::Scene::ResetScene()
 {
 	GPUHandler::WaitIdle();
-	hephics::asset::AssetManager::Reset();
+	asset::AssetManager::Reset();
 	vk_interface::component::ShaderProvider::Reset();
 }
 
@@ -83,7 +83,7 @@ void hephics::Scene::WriteScreenImage() const
 
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& swap_chain = gpu_instance->GetSwapChain();
-	auto& copy_command_buffer = gpu_instance->GetGraphicCommandBuffer("copy");
+	const auto& copy_command_buffer = gpu_instance->GetGraphicCommandBuffer("copy");
 
 	const auto image_wid = swap_chain->GetExtent2D().width;
 	const auto image_high = swap_chain->GetExtent2D().height;

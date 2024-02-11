@@ -16,7 +16,7 @@ void SampleApp::Initialize()
 	m_sceneDictionary.emplace("second", [] { return std::make_shared<SampleSceneAnother>("second"); });
 
 	m_ptrCurrentScene = m_sceneDictionary.at("first")();
-	m_ptrCurrentScene->Initialize(window);
+	m_ptrCurrentScene->Initialize();
 }
 
 void SampleApp::Run()
@@ -35,7 +35,7 @@ void SampleApp::Run()
 			{
 				hephics::Scene::ResetScene();
 				m_ptrCurrentScene = m_sceneDictionary.at(next_scene_name)();
-				m_ptrCurrentScene->Initialize(window);
+				m_ptrCurrentScene->Initialize();
 			}
 		}
 

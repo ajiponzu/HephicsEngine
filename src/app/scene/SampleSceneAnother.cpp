@@ -1,7 +1,9 @@
 #include "../SampleApp.hpp"
 
-void SampleSceneAnother::Initialize(const std::shared_ptr<hephics::window::Window>& window)
+void SampleSceneAnother::Initialize()
 {
+	const auto& window = hephics::window::Manager::GetWindow();
+
 	window->SetCallback(
 		[&](GLFWwindow* window, int key, int scancode, int action, int mods)
 		{
@@ -29,7 +31,7 @@ void SampleSceneAnother::Initialize(const std::shared_ptr<hephics::window::Windo
 
 	m_actors.emplace_back(std::make_shared<SampleActorAnother>());
 
-	Scene::Initialize(window);
+	Scene::Initialize();
 }
 
 void SampleSceneAnother::Update()

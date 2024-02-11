@@ -143,16 +143,15 @@ namespace hephics
 			vk::UniqueSampler m_sampler;
 			uint32_t m_miplevel = 0U;
 
-			void GenerateMipmaps(const std::shared_ptr<VkInstance>& gpu_instance, uint32_t width, uint32_t height);
+			void GenerateMipmaps(const uint32_t& width, const uint32_t& height);
 
 		public:
 			Texture()
 			{
 				m_ptrImage = std::make_shared<vk_interface::component::Image>();
 			}
-			Texture(const std::shared_ptr<VkInstance>& gpu_instance,
-				const std::string& path, const std::string& cv_mat_key);
-			Texture(const std::shared_ptr<VkInstance>& gpu_instance, const std::shared_ptr<cv::Mat>& cv_mat);
+			Texture(const std::string& path, const std::string& cv_mat_key);
+			Texture(const std::shared_ptr<cv::Mat>& cv_mat);
 			~Texture() {}
 
 			Texture(Texture&& other) noexcept
@@ -173,8 +172,7 @@ namespace hephics
 
 			const auto& GetSampler() const { return m_sampler; }
 
-			void CopyTexture(const std::shared_ptr<VkInstance>& gpu_instance,
-				const std::shared_ptr<cv::Mat>& cv_mat);
+			void CopyTexture(const std::shared_ptr<cv::Mat>& cv_mat);
 
 			const auto& GetMiplevel() const { return m_miplevel; }
 		};
@@ -229,8 +227,8 @@ namespace hephics
 			const auto& GetVertexBuffer() const { return m_ptrVertexBuffer; }
 			const auto& GetIndexBuffer() const { return m_ptrIndexBuffer; }
 
-			void CopyVertexBuffer(const std::shared_ptr<VkInstance>& gpu_instance) const;
-			void CopyIndexBuffer(const std::shared_ptr<VkInstance>& gpu_instance) const;
+			void CopyVertexBuffer() const;
+			void CopyIndexBuffer() const;
 		};
 
 		class Texture3D : public Asset3D
@@ -243,8 +241,7 @@ namespace hephics
 				m_ptrVertexBuffer = std::make_shared<hephics_helper::GPUBuffer>();
 				m_ptrIndexBuffer = std::make_shared<hephics_helper::GPUBuffer>();
 			}
-			Texture3D(const std::shared_ptr<VkInstance>& gpu_instance,
-				const std::vector<VertexData>& vertices, const std::vector<uint32_t>& indices);
+			Texture3D(const std::vector<VertexData>& vertices, const std::vector<uint32_t>& indices);
 			~Texture3D() {}
 		};
 
@@ -262,7 +259,7 @@ namespace hephics
 				m_ptrIndexBuffer = std::make_shared<hephics_helper::GPUBuffer>();
 				m_ptrAttribute = std::make_shared<tinyobj::attrib_t>();
 			}
-			Object3D(const std::shared_ptr<VkInstance>& gpu_instance, const std::string& path);
+			Object3D(const std::string& path);
 			~Object3D() {}
 
 			const auto& GetAttribute() const { return m_ptrAttribute; }
@@ -280,7 +277,7 @@ namespace hephics
 				m_ptrVertexBuffer = std::make_shared<hephics_helper::GPUBuffer>();
 				m_ptrIndexBuffer = std::make_shared<hephics_helper::GPUBuffer>();
 			}
-			Fbx3D(const std::shared_ptr<VkInstance>& gpu_instance, const std::string& path) {}
+			Fbx3D(const std::string& path) {}
 			~Fbx3D() {}
 		};
 
@@ -299,17 +296,12 @@ namespace hephics
 		public:
 			static void RegistCvMat(const std::string& asset_path, const std::string& asset_key);
 			static void RegistCvMat(const std::string& asset_key, const cv::Mat& cv_mat);
-			static void RegistObject3D(const std::shared_ptr<VkInstance>& gpu_instance,
-				const std::string& asset_path, const std::string& asset_key);
-			static void RegistFbx3D(const std::shared_ptr<VkInstance>& gpu_instance,
-				const std::string& asset_path, const std::string& asset_key);
+			static void RegistObject3D(const std::string& asset_path, const std::string& asset_key);
+			static void RegistFbx3D(const std::string& asset_path, const std::string& asset_key);
 
-			static void RegistTexture(const std::shared_ptr<VkInstance>& gpu_instance,
-				const std::string& asset_path, const std::string& asset_key);
-			static void RegistTexture(const std::shared_ptr<VkInstance>& gpu_instance,
-				const std::string& asset_key, const cv::Mat& cv_mat);
-			static void RegistTexture3D(const std::shared_ptr<VkInstance>& gpu_instance,
-				const Texture3D& texture_3d, const std::string& asset_key);
+			static void RegistTexture(const std::string& asset_path, const std::string& asset_key);
+			static void RegistTexture(const std::string& asset_key, const cv::Mat& cv_mat);
+			static void RegistTexture3D(const Texture3D& texture_3d, const std::string& asset_key);
 
 			static const std::shared_ptr<cv::Mat>& GetCvMat(const std::string& asset_key);
 			static const std::shared_ptr<Texture>& GetTexture(const std::string& asset_key);
@@ -357,8 +349,8 @@ namespace hephics
 			std::shared_ptr<ShaderAttachment> m_ptrShaderAttachment;
 			bool m_visible = false;
 
-			virtual void LoadData(const std::shared_ptr<VkInstance>& gpu_instance) {}
-			virtual void SetPipeline(const std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void LoadData() {}
+			virtual void SetPipeline() {}
 
 		public:
 			Component() : m_visible(true)
@@ -370,9 +362,9 @@ namespace hephics
 			void SetVisible(const bool& is_visible) { m_visible = is_visible; }
 			const auto& IsVisible() const { return m_visible; }
 
-			virtual void Initialize(const std::shared_ptr<VkInstance>& gpu_instance) {}
-			virtual void Update(class Actor* const owner, const std::shared_ptr<VkInstance>& gpu_instance) {}
-			virtual void Render(const std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void Initialize() {}
+			virtual void Update(class Actor* const owner) {}
+			virtual void Render() {}
 		};
 
 		class Actor
@@ -383,8 +375,8 @@ namespace hephics
 			std::shared_ptr<Position> m_ptrPosition;
 			bool m_visible = false;
 
-			virtual void LoadData(const std::shared_ptr<VkInstance>& gpu_instance) {}
-			virtual void SetPipeline(const std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void LoadData() {}
+			virtual void SetPipeline() {}
 
 		public:
 			Actor() : m_visible(true)
@@ -397,9 +389,9 @@ namespace hephics
 			void SetVisible(const bool& is_visible) { m_visible = is_visible; }
 			const auto& IsVisible() const { return m_visible; }
 
-			virtual void Initialize(const std::shared_ptr<VkInstance>& gpu_instance) {}
-			virtual void Update(const std::shared_ptr<VkInstance>& gpu_instance) {}
-			virtual void Render(const std::shared_ptr<VkInstance>& gpu_instance) {}
+			virtual void Initialize() {}
+			virtual void Update() {}
+			virtual void Render() {}
 
 			auto& GetPosition() { return m_ptrPosition; }
 		};
@@ -423,7 +415,7 @@ namespace hephics
 		Scene(const std::string& scene_name) : m_sceneName(scene_name) {}
 		~Scene() {}
 
-		virtual void Initialize(const std::shared_ptr<window::Window>& window);
+		virtual void Initialize();
 		virtual void Update();
 		virtual void Render();
 

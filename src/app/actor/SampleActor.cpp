@@ -1,15 +1,16 @@
 #include "../SampleApp.hpp"
 
-void SampleActor::LoadData(const std::shared_ptr<hephics::VkInstance>& gpu_instance)
+void SampleActor::LoadData()
 {
+	const auto& gpu_instance = hephics::GPUHandler::GetInstance();
 	const auto& physical_device = gpu_instance->GetPhysicalDevice();
 	const auto& window_surface = gpu_instance->GetWindowSurface();
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& swap_chain = gpu_instance->GetSwapChain();
-	auto& ref_descriptor_set = m_ptrShaderAttachment->GetDescriptorSet();
+	const auto& ref_descriptor_set = m_ptrShaderAttachment->GetDescriptorSet();
 
-	hephics::asset::AssetManager::RegistTexture(gpu_instance, "sample_3d.png", "room");
-	hephics::asset::AssetManager::RegistObject3D(gpu_instance, "sample_3d.obj", "room");
+	hephics::asset::AssetManager::RegistTexture("sample_3d.png", "room");
+	hephics::asset::AssetManager::RegistObject3D("sample_3d.obj", "room");
 
 	vk::DescriptorSetLayoutBinding vertex_uniform_layout_binding(0, vk::DescriptorType::eUniformBuffer,
 		1, vk::ShaderStageFlagBits::eVertex, nullptr);
@@ -53,8 +54,9 @@ void SampleActor::LoadData(const std::shared_ptr<hephics::VkInstance>& gpu_insta
 	}
 }
 
-void SampleActor::SetPipeline(const std::shared_ptr<hephics::VkInstance>& gpu_instance)
+void SampleActor::SetPipeline()
 {
+	const auto& gpu_instance = hephics::GPUHandler::GetInstance();
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& render_pass = gpu_instance->GetSwapChain()->GetRenderPass();
 	auto& ref_descriptor_set = m_ptrShaderAttachment->GetDescriptorSet();
@@ -112,32 +114,33 @@ void SampleActor::SetPipeline(const std::shared_ptr<hephics::VkInstance>& gpu_in
 	ref_graphic_pipeline->SetPipeline(logical_device, pipeline_info);
 }
 
-void SampleActor::Initialize(const std::shared_ptr<hephics::VkInstance>& gpu_instance)
+void SampleActor::Initialize()
 {
 	m_components.emplace_back(std::make_shared<MoveComponent>());
 
-	LoadData(gpu_instance);
-	SetPipeline(gpu_instance);
+	LoadData();
+	SetPipeline();
 
+	const auto& gpu_instance = hephics::GPUHandler::GetInstance();
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 
 	{
 		const auto& texture = hephics::asset::AssetManager::GetTexture("room");
 		const auto& cv_mat = hephics::asset::AssetManager::GetCvMat("room");
-		texture->CopyTexture(gpu_instance, cv_mat);
+		texture->CopyTexture(cv_mat);
 	}
 
 	{
 		const auto& object_3d = hephics::asset::AssetManager::GetObject3D("room");
-		object_3d->CopyVertexBuffer(gpu_instance);
-		object_3d->CopyIndexBuffer(gpu_instance);
+		object_3d->CopyVertexBuffer();
+		object_3d->CopyIndexBuffer();
 	}
 
-	for (auto& component : m_components)
-		component->Initialize(gpu_instance);
+	for (const auto& component : m_components)
+		component->Initialize();
 }
 
-void SampleActor::Update(const std::shared_ptr<hephics::VkInstance>& gpu_instance)
+void SampleActor::Update()
 {
 	static auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -146,14 +149,15 @@ void SampleActor::Update(const std::shared_ptr<hephics::VkInstance>& gpu_instanc
 		current_time - start_time).count();
 
 	/* firstly, component's update method */
-	for (auto& component : m_components)
-		component->Update(this, gpu_instance);
+	for (const auto& component : m_components)
+		component->Update(this);
 
+	const auto& gpu_instance = hephics::GPUHandler::GetInstance();
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& swap_chain = gpu_instance->GetSwapChain();
 
 	const auto& current_frame_id = swap_chain->GetCurrentFrameId();
-	auto& uniform_buffer = m_ptrShaderAttachment->GetUniformBuffersMap().at("position").at(current_frame_id);
+	const auto& uniform_buffer = m_ptrShaderAttachment->GetUniformBuffersMap().at("position").at(current_frame_id);
 	auto uniform_address = uniform_buffer->Mapping(logical_device);
 
 	static glm::vec2 scroll;
@@ -170,12 +174,14 @@ void SampleActor::Update(const std::shared_ptr<hephics::VkInstance>& gpu_instanc
 	uniform_buffer->Unmapping(logical_device);
 }
 
-void SampleActor::Render(const std::shared_ptr<hephics::VkInstance>& gpu_instance)
+void SampleActor::Render()
 {
+	const auto& gpu_instance = hephics::GPUHandler::GetInstance();
+
 	/* firstly, actor's render method */
-	auto& logical_device = gpu_instance->GetLogicalDevice();
+	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& swap_chain = gpu_instance->GetSwapChain();
-	auto& render_command_buffer = gpu_instance->GetGraphicCommandBuffer("render")->GetCommandBuffer();
+	const auto& render_command_buffer = gpu_instance->GetGraphicCommandBuffer("render")->GetCommandBuffer();
 	const auto& pipeline = m_ptrShaderAttachment->GetGraphicPipeline();
 	const auto& desc_set =
 		m_ptrShaderAttachment->GetDescriptorSet()->GetDescriptorSet(swap_chain->GetCurrentFrameId());
@@ -189,6 +195,6 @@ void SampleActor::Render(const std::shared_ptr<hephics::VkInstance>& gpu_instanc
 		pipeline->GetLayout().get(), 0, desc_set.get(), nullptr);
 	render_command_buffer->drawIndexed(static_cast<uint32_t>(object_3d->GetIndices().size()), 1, 0, 0, 0);
 
-	for (auto& component : m_components)
-		component->Render(gpu_instance);
+	for (const auto& component : m_components)
+		component->Render();
 }

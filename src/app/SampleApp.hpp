@@ -23,7 +23,7 @@ public:
 
 	~SampleScene() {}
 
-	virtual void Initialize(const std::shared_ptr<hephics::window::Window>& ptr_window) override;
+	virtual void Initialize() override;
 	virtual void Update() override;
 	virtual void Render() override;
 };
@@ -38,7 +38,7 @@ public:
 	{}
 	~SampleSceneAnother() {}
 
-	virtual void Initialize(const std::shared_ptr<hephics::window::Window>& ptr_window) override;
+	virtual void Initialize() override;
 	virtual void Update() override;
 	virtual void Render() override;
 };
@@ -46,44 +46,44 @@ public:
 class SampleActor : public hephics::actor::Actor
 {
 private:
-	virtual void LoadData(const std::shared_ptr<hephics::VkInstance>& gpu_instance) override;
-	virtual void SetPipeline(const std::shared_ptr<hephics::VkInstance>& gpu_instance) override;
+	virtual void LoadData() override;
+	virtual void SetPipeline() override;
 
 public:
 	SampleActor() {}
 	~SampleActor() {}
 
-	virtual void Initialize(const std::shared_ptr<hephics::VkInstance>& gpu_instance) override;
-	virtual void Update(const std::shared_ptr<hephics::VkInstance>& gpu_instance) override;
-	virtual void Render(const std::shared_ptr<hephics::VkInstance>& gpu_instance) override;
+	virtual void Initialize() override;
+	virtual void Update() override;
+	virtual void Render() override;
 };
 
 class SampleActorAnother : public hephics::actor::Actor
 {
 private:
-	virtual void LoadData(const std::shared_ptr<hephics::VkInstance>& gpu_instance) override;
-	virtual void SetPipeline(const std::shared_ptr<hephics::VkInstance>& gpu_instance) override;
+	virtual void LoadData() override;
+	virtual void SetPipeline() override;
 
 public:
 	SampleActorAnother() = default;
 	~SampleActorAnother() {}
 
-	virtual void Initialize(const std::shared_ptr<hephics::VkInstance>& gpu_instance) override;
-	virtual void Update(const std::shared_ptr<hephics::VkInstance>& gpu_instance) override;
-	virtual void Render(const std::shared_ptr<hephics::VkInstance>& gpu_instance) override;
+	virtual void Initialize() override;
+	virtual void Update() override;
+	virtual void Render() override;
 };
 
 class MoveComponent : public hephics::actor::Component
 {
 private:
-	virtual void LoadData(const std::shared_ptr<hephics::VkInstance>& gpu_instance) override {};
-	virtual void SetPipeline(const std::shared_ptr<hephics::VkInstance>& gpu_instance) override {};
+	virtual void LoadData() override {};
+	virtual void SetPipeline() override {};
 
 public:
 	MoveComponent() = default;
 	~MoveComponent() {}
 
-	virtual void Initialize(const std::shared_ptr<hephics::VkInstance>& gpu_instance) override;
-	virtual void Update(hephics::actor::Actor* const owner, const std::shared_ptr<hephics::VkInstance>& gpu_instance) override;
-	virtual void Render(const std::shared_ptr<hephics::VkInstance>& gpu_instance) override;
+	virtual void Initialize() override;
+	virtual void Update(hephics::actor::Actor* const owner) override;
+	virtual void Render() override;
 };

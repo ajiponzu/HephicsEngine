@@ -1,10 +1,10 @@
 #include "../SampleApp.hpp"
 
-void MoveComponent::Initialize(const std::shared_ptr<hephics::VkInstance>& gpu_instance)
+void MoveComponent::Initialize()
 {
 }
 
-void MoveComponent::Update(hephics::actor::Actor* const owner, const std::shared_ptr<hephics::VkInstance>& gpu_instance)
+void MoveComponent::Update(hephics::actor::Actor* const owner)
 {
 	static constexpr auto VERTICAL_MOVEMENT = 2.0f;
 	static constexpr auto HORIZONTAL_MOVEMENT = 2.0f;
@@ -69,6 +69,6 @@ void MoveComponent::Update(hephics::actor::Actor* const owner, const std::shared
 	}
 }
 
-void MoveComponent::Render(const std::shared_ptr<hephics::VkInstance>& gpu_instance)
+void MoveComponent::Render()
 {
 }
