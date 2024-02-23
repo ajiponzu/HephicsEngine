@@ -14,13 +14,10 @@ void SampleSceneAnother::Initialize()
 				{
 				case GLFW_KEY_ESCAPE:
 					m_isContinuous = false;
-					Scene::ResetScene();
-					::glfwSetWindowShouldClose(window, GLFW_TRUE);
 					break;
 				case GLFW_KEY_ENTER:
 					m_isChangedScene = true;
 					m_nextSceneName = "first";
-					Scene::ResetScene();
 					break;
 				case GLFW_KEY_SPACE:
 					WriteScreenImage();

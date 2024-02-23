@@ -9,7 +9,7 @@ void SampleApp::Initialize()
 	hephics::window::Manager::InitializeWindow({ 800, 600, "main" });
 	const auto& window = hephics::window::Manager::GetWindow();
 
-	hephics::GPUHandler::AddPurpose({ "render", "copy" });
+	hephics::GPUHandler::AddGraphicPurpose({ "render", "copy" });
 	hephics::GPUHandler::InitializeInstance();
 
 	m_sceneDictionary.emplace("first", [] { return std::make_shared<SampleScene>("first"); });

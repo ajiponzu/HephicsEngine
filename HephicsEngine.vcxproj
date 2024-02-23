@@ -142,6 +142,7 @@
     <ClCompile Include="src\hephics\component\Asset.cpp" />
     <ClCompile Include="src\hephics\component\GPUHandler.cpp" />
     <ClCompile Include="src\hephics\component\Scene.cpp" />
+    <ClCompile Include="src\hephics\component\vfx\Particle.cpp" />
     <ClCompile Include="src\hephics\component\VkInstance.cpp" />
     <ClCompile Include="src\hephics\component\Window.cpp" />
     <ClCompile Include="src\hephics\vulkan_helper\CreateInfo.cpp" />

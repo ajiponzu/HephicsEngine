@@ -43,6 +43,9 @@
     <Filter Include="src\hephics\vk_interface\component">
       <UniqueIdentifier>{58d2e582-86fb-4f08-87c2-8866305985c7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\hephics\component\vfx">
+      <UniqueIdentifier>{ba40f59a-7509-483b-9f6b-221047fb9b26}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\app\actor\MoveComponent.cpp">
@@ -114,6 +117,7 @@
     <ClCompile Include="pch\stdafx.cpp">
       <Filter>pch</Filter>
     </ClCompile>
+    <ClCompile Include="src\hephics\component\vfx\Particle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\app\SampleApp.hpp">

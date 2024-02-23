@@ -89,7 +89,8 @@ namespace hephics
 	protected:
 		friend class Renderer;
 
-		std::vector<std::vector<std::shared_ptr<vk_interface::component::CommandBuffer>>> m_graphicCommandBuffers;
+		std::vector<std::unordered_map<std::string, std::shared_ptr<vk_interface::component::CommandBuffer>>>
+			m_graphicCommandBuffers;
 
 		virtual void SetInstance(const vk::ApplicationInfo& app_info);
 		virtual void SetWindowSurface();
@@ -313,6 +314,29 @@ namespace hephics
 		};
 	};
 
+	namespace vfx
+	{
+		class ParticleSystem
+		{
+		public:
+			struct Particle
+			{
+				glm::vec2 position;
+				glm::vec2 velocity;
+				glm::vec4 color;
+			};
+
+		protected:
+			static std::unordered_map<std::string, std::vector<Particle>> s_particlesMap;
+
+			ParticleSystem() = delete;
+			~ParticleSystem() = delete;
+
+		public:
+			static void AddParticles(const std::string& key);
+		};
+	};
+
 	namespace actor
 	{
 		class ShaderAttachment
@@ -449,7 +473,7 @@ namespace hephics
 	class GPUHandler
 	{
 	private:
-		static std::unordered_map<std::string, size_t> s_graphicPurposeDictionary;
+		static std::unordered_set<std::string> s_graphicPurposeSet;
 		static std::shared_ptr<VkInstance> s_ptrGPUInstance;
 
 		GPUHandler() = delete;
@@ -458,12 +482,12 @@ namespace hephics
 	public:
 		static void Shutdown()
 		{
-			s_graphicPurposeDictionary.clear();
+			s_graphicPurposeSet.clear();
 			Scene::ResetScene();
 			s_ptrGPUInstance = nullptr;
 		}
 
-		static void AddPurpose(const std::vector<std::string>& purpose_list);
+		static void AddGraphicPurpose(const std::vector<std::string>& purpose_list);
 
 		static void InitializeInstance();
 
@@ -471,9 +495,7 @@ namespace hephics
 
 		static void WaitIdle() { s_ptrGPUInstance->GetLogicalDevice()->waitIdle(); }
 
-		static const size_t& GetPurposeIdx(const std::string& purpose);
-
-		static const size_t GetPurposeNumber();
+		static const auto& GetGraphicPurpose() { return s_graphicPurposeSet; }
 	};
 
 	class Engine

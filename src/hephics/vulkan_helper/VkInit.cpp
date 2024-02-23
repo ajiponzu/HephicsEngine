@@ -136,8 +136,9 @@ vk_interface::component::QueueFamilyIndices hephics_helper::vk_init::find_queue_
 	uint32_t family_id = 0;
 	for (const auto& queue_family : queue_families)
 	{
-		if (queue_family.queueFlags & vk::QueueFlagBits::eGraphics)
-			indices.graphics_family = family_id;
+		if ((queue_family.queueFlags & vk::QueueFlagBits::eGraphics)
+			&& (queue_family.queueFlags & vk::QueueFlagBits::eCompute))
+			indices.graphics_and_compute_family = family_id;
 
 		const auto present_support = physical_device.getSurfaceSupportKHR(family_id, vk_surface.get());
 		if (present_support)
@@ -148,7 +149,7 @@ vk_interface::component::QueueFamilyIndices hephics_helper::vk_init::find_queue_
 
 		family_id++;
 	}
-	indices.family_array.at(0) = indices.graphics_family.value();
+	indices.family_array.at(0) = indices.graphics_and_compute_family.value();
 	indices.family_array.at(1) = indices.present_family.value();
 
 	return indices;

@@ -85,7 +85,7 @@ void hephics::VkInstance::SetLogicalDeviceAndQueue()
 {
 	std::vector<vk::DeviceQueueCreateInfo> queue_create_info_list;
 	std::set<uint32_t> unique_queue_families =
-	{ m_queueFamilyIndices.graphics_family.value(), m_queueFamilyIndices.present_family.value() };
+	{ m_queueFamilyIndices.graphics_and_compute_family.value(), m_queueFamilyIndices.present_family.value() };
 
 	static constexpr auto queue_priority = 1.0f;
 	for (const auto& queue_family : unique_queue_families)
@@ -104,11 +104,15 @@ void hephics::VkInstance::SetLogicalDeviceAndQueue()
 #endif
 
 	m_logicalDevice = m_physicalDevice.createDeviceUnique(create_info);
-	m_queuesDictionary.emplace(vk::QueueFlagBits::eGraphics, std::vector
-		{
-			m_logicalDevice->getQueue(m_queueFamilyIndices.graphics_family.value(), 0),
-			m_logicalDevice->getQueue(m_queueFamilyIndices.present_family.value(), 0)
-		});
+	m_queuesDictionary.emplace(vk::QueueFlagBits::eGraphics, std::unordered_map<std::string, vk::Queue>
+	{
+		{ "graphics", m_logicalDevice->getQueue(m_queueFamilyIndices.graphics_and_compute_family.value(), 0)},
+		{ "present", m_logicalDevice->getQueue(m_queueFamilyIndices.present_family.value(), 0) }
+	});
+	m_queuesDictionary.emplace(vk::QueueFlagBits::eCompute, std::unordered_map<std::string, vk::Queue>
+	{
+		{ "compute", m_logicalDevice->getQueue(m_queueFamilyIndices.graphics_and_compute_family.value(), 0)}
+	});
 }
 
 void hephics::VkInstance::SetSwapChain()
@@ -226,14 +230,13 @@ void hephics::VkInstance::SetSwapChainSyncObjects()
 void hephics::VkInstance::SetCommandPools()
 {
 	vk::CommandPoolCreateInfo create_info(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-		m_queueFamilyIndices.graphics_family.value());
+		m_queueFamilyIndices.graphics_and_compute_family.value());
 
 	const auto command_pool_size = m_ptrSwapChain->GetFramebuffers().size();
-	const auto purpose_number = GPUHandler::GetPurposeNumber();
-	std::vector<std::vector<vk::UniqueCommandPool>> command_pools(command_pool_size);
+	std::vector<std::unordered_map<std::string, vk::UniqueCommandPool>> command_pools(command_pool_size);
 	for (size_t idx = 0; idx < command_pool_size; idx++)
-		for (size_t _ = 0; _ < purpose_number; _++)
-			command_pools.at(idx).emplace_back(m_logicalDevice->createCommandPoolUnique(create_info));
+		for (const auto& purpose : GPUHandler::GetGraphicPurpose())
+			command_pools.at(idx).emplace(purpose, m_logicalDevice->createCommandPoolUnique(create_info));
 
 	m_commandPoolsDictionary.emplace(vk::QueueFlagBits::eGraphics, std::move(command_pools));
 }
@@ -241,21 +244,20 @@ void hephics::VkInstance::SetCommandPools()
 void hephics::VkInstance::SetCommandBuffers()
 {
 	const auto& graphic_command_pools = m_commandPoolsDictionary.at(vk::QueueFlagBits::eGraphics);
-	const auto purpose_number = GPUHandler::GetPurposeNumber();
 	decltype(m_graphicCommandBuffers) graphic_command_buffers(graphic_command_pools.size());
 
 	size_t buffer_idx = 0U;
 	for (const auto& graphic_command_pool : graphic_command_pools)
 	{
-		for (size_t pool_idx = 0; pool_idx < purpose_number; pool_idx++)
+		for (const auto& purpose : GPUHandler::GetGraphicPurpose())
 		{
-			vk::CommandBufferAllocateInfo alloc_info(graphic_command_pool.at(pool_idx).get(), vk::CommandBufferLevel::ePrimary, 1);
+			vk::CommandBufferAllocateInfo alloc_info(graphic_command_pool.at(purpose).get(), vk::CommandBufferLevel::ePrimary, 1);
 			auto unique_command_buffers = m_logicalDevice->allocateCommandBuffersUnique(alloc_info);
 
 			vk_interface::component::CommandBuffer new_command_buffer;
 			new_command_buffer.SetCommandBuffer(std::move(unique_command_buffers));
-			graphic_command_buffers.at(buffer_idx).emplace_back(
-				std::make_shared<vk_interface::component::CommandBuffer>(std::move(new_command_buffer)));
+			graphic_command_buffers.at(buffer_idx).emplace(
+				purpose, std::make_shared<vk_interface::component::CommandBuffer>(std::move(new_command_buffer)));
 		}
 		buffer_idx++;
 	}
@@ -308,7 +310,7 @@ void hephics::VkInstance::SubmitCopyGraphicResource(const vk::SubmitInfo& submit
 	if (!m_queuesDictionary.contains(vk::QueueFlagBits::eGraphics))
 		throw std::runtime_error("queue: not found");
 
-	m_queuesDictionary.at(vk::QueueFlagBits::eGraphics).at(0).submit(submit_info, nullptr);
+	m_queuesDictionary.at(vk::QueueFlagBits::eGraphics).at("graphics").submit(submit_info, nullptr);
 	m_logicalDevice->waitIdle();
 }
 
@@ -318,7 +320,7 @@ void hephics::VkInstance::SubmitRenderingCommand(const vk::SubmitInfo& submit_in
 		throw std::runtime_error("queue: not found");
 
 	const auto& current_fence = m_ptrSwapChain->GetCurrentSwapFence()->GetFence();
-	m_queuesDictionary.at(vk::QueueFlagBits::eGraphics).at(0).submit(submit_info, current_fence.get());
+	m_queuesDictionary.at(vk::QueueFlagBits::eGraphics).at("graphics").submit(submit_info, current_fence.get());
 }
 
 void hephics::VkInstance::PresentFrame(const vk::PresentInfoKHR& present_info)
@@ -326,7 +328,7 @@ void hephics::VkInstance::PresentFrame(const vk::PresentInfoKHR& present_info)
 	if (!m_queuesDictionary.contains(vk::QueueFlagBits::eGraphics))
 		throw std::runtime_error("queue: not found");
 
-	vk::resultCheck(m_queuesDictionary.at(vk::QueueFlagBits::eGraphics).at(1).presentKHR(present_info),
+	vk::resultCheck(m_queuesDictionary.at(vk::QueueFlagBits::eGraphics).at("present").presentKHR(present_info),
 		"failed to present");
 }
 
@@ -357,6 +359,5 @@ vk::SampleCountFlagBits hephics::VkInstance::GetMultiSampleCount() const
 std::shared_ptr<vk_interface::component::CommandBuffer>& hephics::VkInstance::GetGraphicCommandBuffer(const std::string& purpose)
 {
 	const auto& next_image_id = m_ptrSwapChain->GetNextImageId();
-	const auto purpose_idx = GPUHandler::GetPurposeIdx(purpose);
-	return m_graphicCommandBuffers.at(next_image_id).at(purpose_idx);
+	return m_graphicCommandBuffers.at(next_image_id).at(purpose);
 }

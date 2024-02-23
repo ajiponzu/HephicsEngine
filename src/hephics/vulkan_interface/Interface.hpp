@@ -23,19 +23,19 @@ namespace vk_interface
 			}
 			~QueueFamilyIndices() {}
 
-			std::optional<uint32_t> graphics_family;
+			std::optional<uint32_t> graphics_and_compute_family;
 			std::optional<uint32_t> present_family;
 
 			QueueFamilyArray family_array{};
 
 			bool is_complete() const
 			{
-				return graphics_family.has_value() && present_family.has_value();
+				return graphics_and_compute_family.has_value() && present_family.has_value();
 			}
 
 			bool is_equal_families() const
 			{
-				return graphics_family.value() == present_family.value();
+				return graphics_and_compute_family.value() == present_family.value();
 			}
 
 			const QueueFamilyArray& get_families_array() const
@@ -485,11 +485,11 @@ namespace vk_interface
 		vk::UniqueSurfaceKHR m_windowSurface;
 		vk::PhysicalDevice m_physicalDevice;
 		vk::UniqueDevice m_logicalDevice;
-		std::unordered_map<vk::QueueFlags, std::vector<vk::Queue>>
+		std::unordered_map<vk::QueueFlags, std::unordered_map<std::string, vk::Queue>>
 			m_queuesDictionary;
 		std::shared_ptr<component::SwapChain> m_ptrSwapChain;
-		std::unordered_map<vk::QueueFlags,
-			std::vector<std::vector<vk::UniqueCommandPool>>> m_commandPoolsDictionary;
+		std::unordered_map<vk::QueueFlags, std::vector<std::unordered_map<std::string, vk::UniqueCommandPool>>>
+			m_commandPoolsDictionary;
 		component::QueueFamilyIndices m_queueFamilyIndices;
 
 	public:
