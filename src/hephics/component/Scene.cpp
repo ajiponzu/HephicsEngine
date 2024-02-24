@@ -98,8 +98,12 @@ void hephics::Scene::WriteScreenImage() const
 
 	copy_command_buffer->ResetCommands({});
 	copy_command_buffer->BeginRecordingCommands({});
-	copy_command_buffer->GetCommandBuffer()->copyImageToBuffer(swap_chain->GetCurrentImage(), vk::ImageLayout::eTransferSrcOptimal,
-		staging_buffer->GetBuffer().get(), image_copy_region);
+	copy_command_buffer->TransitionImageCommandLayout(swap_chain->GetCurrentImage(), swap_chain->GetImageFormat(),
+		{ vk::ImageLayout::ePresentSrcKHR, vk::ImageLayout::eTransferSrcOptimal }, 1U);
+	copy_command_buffer->GetCommandBuffer()->copyImageToBuffer(swap_chain->GetCurrentImage(),
+		vk::ImageLayout::eTransferSrcOptimal, staging_buffer->GetBuffer().get(), image_copy_region);
+	copy_command_buffer->TransitionImageCommandLayout(swap_chain->GetCurrentImage(), swap_chain->GetImageFormat(),
+		{ vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::ePresentSrcKHR }, 1U);
 	copy_command_buffer->EndRecordingCommands();
 
 	std::vector<vk::CommandBuffer> submitted_command_buffers;

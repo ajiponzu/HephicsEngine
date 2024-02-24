@@ -39,13 +39,13 @@ void vk_interface::component::CommandBuffer::SetViewportAndScissor(const std::sh
 	m_commandBuffer->setScissor(0, scissor);
 }
 
-void vk_interface::component::CommandBuffer::TransitionImageCommandLayout(const std::shared_ptr<Image>& vk_image,
+void vk_interface::component::CommandBuffer::TransitionImageCommandLayout(const vk::Image& vk_image,
 	const vk::Format& vk_format, const std::pair<vk::ImageLayout, vk::ImageLayout>& transition_layout_pair, const uint32_t& miplevel)
 {
 	const auto& [old_image_layout, new_image_layout] = transition_layout_pair;
 
 	vk::ImageMemoryBarrier image_memory_barrier(vk::AccessFlagBits::eNone,
-		vk::AccessFlagBits::eNone, old_image_layout, new_image_layout, 0, 0, vk_image->GetImage().get(),
+		vk::AccessFlagBits::eNone, old_image_layout, new_image_layout, 0, 0, vk_image,
 		vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
 	image_memory_barrier.subresourceRange.setLevelCount(miplevel);
 
@@ -67,30 +67,33 @@ void vk_interface::component::CommandBuffer::TransitionImageCommandLayout(const 
 		src_stage_flags = vk::PipelineStageFlagBits::eTransfer;
 		dst_stage_flags = vk::PipelineStageFlagBits::eFragmentShader;
 	}
-	else if (old_image_layout == vk::ImageLayout::eUndefined
-		&& new_image_layout == vk::ImageLayout::eStencilAttachmentOptimal)
+	else if (old_image_layout == vk::ImageLayout::ePresentSrcKHR
+		&& new_image_layout == vk::ImageLayout::eTransferSrcOptimal)
 	{
-		image_memory_barrier.setDstAccessMask(
-			vk::AccessFlagBits::eDepthStencilAttachmentRead |
-			vk::AccessFlagBits::eDepthStencilAttachmentWrite);
+		image_memory_barrier.setSrcAccessMask(vk::AccessFlagBits::eMemoryRead);
+		image_memory_barrier.setDstAccessMask(vk::AccessFlagBits::eTransferWrite);
 		src_stage_flags = vk::PipelineStageFlagBits::eTopOfPipe;
-		dst_stage_flags = vk::PipelineStageFlagBits::eEarlyFragmentTests;
+		dst_stage_flags = vk::PipelineStageFlagBits::eTransfer;
+	}
+	else if (old_image_layout == vk::ImageLayout::eTransferSrcOptimal
+		&& new_image_layout == vk::ImageLayout::ePresentSrcKHR)
+	{
+		image_memory_barrier.setSrcAccessMask(vk::AccessFlagBits::eTransferWrite);
+		image_memory_barrier.setDstAccessMask(vk::AccessFlagBits::eMemoryRead);
+		src_stage_flags = vk::PipelineStageFlagBits::eTransfer;
+		dst_stage_flags = vk::PipelineStageFlagBits::eTopOfPipe;
 	}
 	else
 		throw std::invalid_argument("unsupported layout transition!");
 
-	if (new_image_layout == vk::ImageLayout::eDepthStencilAttachmentOptimal)
-	{
-		image_memory_barrier.subresourceRange.setAspectMask(vk::ImageAspectFlagBits::eDepth);
-
-		if (vk_format == vk::Format::eD32SfloatS8Uint || vk_format == vk::Format::eD24UnormS8Uint)
-			image_memory_barrier.subresourceRange.aspectMask |= vk::ImageAspectFlagBits::eStencil;
-	}
-	else
-		image_memory_barrier.subresourceRange.setAspectMask(vk::ImageAspectFlagBits::eColor);
-
 	m_commandBuffer->pipelineBarrier(src_stage_flags, dst_stage_flags,
 		{}, nullptr, nullptr, image_memory_barrier);
+}
+
+void vk_interface::component::CommandBuffer::TransitionImageCommandLayout(const std::shared_ptr<Image>& vk_image,
+	const vk::Format& vk_format, const std::pair<vk::ImageLayout, vk::ImageLayout>& transition_layout_pair, const uint32_t& miplevel)
+{
+	TransitionImageCommandLayout(vk_image->GetImage().get(), vk_format, transition_layout_pair, miplevel);
 }
 
 void vk_interface::component::CommandBuffer::CopyBuffer(const std::shared_ptr<Buffer>& src_buffer,
