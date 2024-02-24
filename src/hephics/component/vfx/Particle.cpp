@@ -1,8 +1,13 @@
 #include "../../Hephics.hpp"
 
-std::unordered_map<std::string, std::vector<hephics::vfx::ParticleSystem::Particle>>
-hephics::vfx::ParticleSystem::s_particlesMap;
+void hephics::vfx::particle_system::Engine::Initialize()
+{
+}
 
-void hephics::vfx::ParticleSystem::AddParticles(const std::string& key)
+void hephics::vfx::particle_system::Engine::Update(actor::Actor* const owner)
+{
+}
+
+void hephics::vfx::particle_system::Engine::Render()
 {
 }

@@ -7,11 +7,11 @@ void SampleActorAnother::LoadData()
 	const auto& window_surface = gpu_instance->GetWindowSurface();
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& swap_chain = gpu_instance->GetSwapChain();
-	const auto& ref_descriptor_set = m_ptrShaderAttachment->GetDescriptorSet();
+	const auto& ref_descriptor_set = m_ptrRenderer->GetDescriptorSet();
 
 	auto lenna_image = cv::imread("assets/img/sample_2d.png");
 	cv::cvtColor(lenna_image, lenna_image, cv::COLOR_BGR2RGBA);
-	hephics::asset::AssetManager::RegistTexture("lenna", lenna_image);
+	hephics::asset::Manager::RegistTexture("lenna", lenna_image);
 
 	static const auto vertices = std::vector<hephics::asset::VertexData>{
 		{{-0.5f, -0.5f, 0.f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
@@ -32,7 +32,7 @@ void SampleActorAnother::LoadData()
 	};
 
 	const hephics::asset::Texture3D texture_3d = hephics::asset::Texture3D(vertices, indices);
-	hephics::asset::AssetManager::RegistTexture3D(texture_3d, "lenna");
+	hephics::asset::Manager::RegistTexture3D(texture_3d, "lenna");
 
 	vk::DescriptorSetLayoutBinding vertex_uniform_layout_binding(2, vk::DescriptorType::eUniformBuffer,
 		1, vk::ShaderStageFlagBits::eVertex, nullptr);
@@ -58,7 +58,7 @@ void SampleActorAnother::LoadData()
 	ref_descriptor_set->SetDescriptorSet(logical_device, hephics::BUFFERING_FRAME_NUM);
 
 	const auto position_uniform_buffer_size = sizeof(decltype(*m_ptrPosition));
-	auto& uniform_buffers_map = m_ptrShaderAttachment->GetUniformBuffersMap();
+	auto& uniform_buffers_map = m_ptrRenderer->GetUniformBuffersMap();
 	uniform_buffers_map["position"] = {};
 	for (size_t idx = 0; idx < hephics::BUFFERING_FRAME_NUM; idx++)
 	{
@@ -96,7 +96,7 @@ void SampleActorAnother::LoadData()
 		vk::DescriptorBufferInfo cursor_buffer_info(
 			cursor_uniform_buffers.at(idx)->GetBuffer().get(), 0, cursor_uniform_buffer_size);
 
-		const auto& texture = hephics::asset::AssetManager::GetTexture("lenna");
+		const auto& texture = hephics::asset::Manager::GetTexture("lenna");
 		vk::DescriptorImageInfo image_info(texture->GetSampler().get(),
 			texture->GetImage()->GetView().get(), vk::ImageLayout::eShaderReadOnlyOptimal);
 
@@ -115,8 +115,8 @@ void SampleActorAnother::SetPipeline()
 	const auto& gpu_instance = hephics::GPUHandler::GetInstance();
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& render_pass = gpu_instance->GetSwapChain()->GetRenderPass();
-	const auto& ref_descriptor_set = m_ptrShaderAttachment->GetDescriptorSet();
-	const auto& ref_graphic_pipeline = m_ptrShaderAttachment->GetGraphicPipeline();
+	const auto& ref_descriptor_set = m_ptrRenderer->GetDescriptorSet();
+	const auto& ref_graphic_pipeline = m_ptrRenderer->GetGraphicPipeline();
 
 	vk_interface::component::ShaderProvider::AddShader(logical_device, "vert/sample_shader.vert", "lenna");
 	vk_interface::component::ShaderProvider::AddShader(logical_device, "frag/sample_shader.frag", "lenna");
@@ -172,6 +172,9 @@ void SampleActorAnother::SetPipeline()
 
 void SampleActorAnother::Initialize()
 {
+	m_ptrPosition = std::make_shared<hephics::actor::Position>();
+	m_ptrRenderer = std::make_shared<hephics::actor::Renderer>();
+
 	LoadData();
 	SetPipeline();
 
@@ -179,19 +182,19 @@ void SampleActorAnother::Initialize()
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 
 	{
-		const auto& texture = hephics::asset::AssetManager::GetTexture("lenna");
-		const auto& cv_mat = hephics::asset::AssetManager::GetCvMat("lenna");
+		const auto& texture = hephics::asset::Manager::GetTexture("lenna");
+		const auto& cv_mat = hephics::asset::Manager::GetCvMat("lenna");
 		texture->CopyTexture(cv_mat);
 	}
 
 	{
-		const auto& texture_3d = hephics::asset::AssetManager::GetTexture3D("lenna");
+		const auto& texture_3d = hephics::asset::Manager::GetTexture3D("lenna");
 		texture_3d->CopyVertexBuffer();
 		texture_3d->CopyIndexBuffer();
 	}
 
-	for (const auto& component : m_components)
-		component->Initialize();
+	for (const auto& attachment : m_attachments)
+		attachment->Initialize();
 }
 
 void SampleActorAnother::Update()
@@ -203,8 +206,8 @@ void SampleActorAnother::Update()
 		current_time - start_time).count();
 
 	/* firstly, component's update method */
-	for (const auto& component : m_components)
-		component->Update(this);
+	for (const auto& attachment : m_attachments)
+		attachment->Update(this);
 
 	const auto& gpu_instance = hephics::GPUHandler::GetInstance();
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
@@ -212,7 +215,7 @@ void SampleActorAnother::Update()
 
 	{
 		const auto& current_frame_id = swap_chain->GetCurrentFrameId();
-		const auto& cursor_uniform_buffer = m_ptrShaderAttachment->GetUniformBuffersMap().at("cursor").at(current_frame_id);
+		const auto& cursor_uniform_buffer = m_ptrRenderer->GetUniformBuffersMap().at("cursor").at(current_frame_id);
 		auto cursor_uniform_address = cursor_uniform_buffer->Mapping(logical_device);
 
 		const auto& window = hephics::window::Manager::GetWindow();
@@ -226,7 +229,7 @@ void SampleActorAnother::Update()
 
 	{
 		const auto& current_frame_id = swap_chain->GetCurrentFrameId();
-		const auto& position_uniform_buffer = m_ptrShaderAttachment->GetUniformBuffersMap().at("position").at(current_frame_id);
+		const auto& position_uniform_buffer = m_ptrRenderer->GetUniformBuffersMap().at("position").at(current_frame_id);
 		auto position_uniform_address = position_uniform_buffer->Mapping(logical_device);
 
 		const auto& window = hephics::window::Manager::GetWindow();
@@ -245,7 +248,7 @@ void SampleActorAnother::Update()
 
 	{
 		const auto& current_frame_id = swap_chain->GetCurrentFrameId();
-		const auto& uniform_buffer = m_ptrShaderAttachment->GetUniformBuffersMap().at("timer").at(current_frame_id);
+		const auto& uniform_buffer = m_ptrRenderer->GetUniformBuffersMap().at("timer").at(current_frame_id);
 		auto uniform_address = uniform_buffer->Mapping(logical_device);
 
 		std::memcpy(uniform_address, &time, sizeof(float_t));
@@ -261,11 +264,11 @@ void SampleActorAnother::Render()
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& swap_chain = gpu_instance->GetSwapChain();
 	const auto& render_command_buffer = gpu_instance->GetGraphicCommandBuffer("render")->GetCommandBuffer();
-	const auto& pipeline = m_ptrShaderAttachment->GetGraphicPipeline();
+	const auto& pipeline = m_ptrRenderer->GetGraphicPipeline();
 	const auto& desc_set =
-		m_ptrShaderAttachment->GetDescriptorSet()->GetDescriptorSet(swap_chain->GetCurrentFrameId());
+		m_ptrRenderer->GetDescriptorSet()->GetDescriptorSet(swap_chain->GetCurrentFrameId());
 
-	const auto& texture_3d = hephics::asset::AssetManager::GetTexture3D("lenna");
+	const auto& texture_3d = hephics::asset::Manager::GetTexture3D("lenna");
 
 	render_command_buffer->bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline().get());
 	render_command_buffer->bindVertexBuffers(0, { texture_3d->GetVertexBuffer()->GetBuffer().get() }, { 0 });
@@ -274,6 +277,6 @@ void SampleActorAnother::Render()
 		pipeline->GetLayout().get(), 0, desc_set.get(), nullptr);
 	render_command_buffer->drawIndexed(static_cast<uint32_t>(texture_3d->GetIndices().size()), 1, 0, 0, 0);
 
-	for (auto& component : m_components)
-		component->Render();
+	for (auto& attachment : m_attachments)
+		attachment->Render();
 }

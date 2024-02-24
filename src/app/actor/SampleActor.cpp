@@ -7,10 +7,10 @@ void SampleActor::LoadData()
 	const auto& window_surface = gpu_instance->GetWindowSurface();
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& swap_chain = gpu_instance->GetSwapChain();
-	const auto& ref_descriptor_set = m_ptrShaderAttachment->GetDescriptorSet();
+	const auto& ref_descriptor_set = m_ptrRenderer->GetDescriptorSet();
 
-	hephics::asset::AssetManager::RegistTexture("sample_3d.png", "room");
-	hephics::asset::AssetManager::RegistObject3D("sample_3d.obj", "room");
+	hephics::asset::Manager::RegistTexture("sample_3d.png", "room");
+	hephics::asset::Manager::RegistObject3D("sample_3d.obj", "room");
 
 	vk::DescriptorSetLayoutBinding vertex_uniform_layout_binding(0, vk::DescriptorType::eUniformBuffer,
 		1, vk::ShaderStageFlagBits::eVertex, nullptr);
@@ -29,7 +29,7 @@ void SampleActor::LoadData()
 	ref_descriptor_set->SetDescriptorSet(logical_device, hephics::BUFFERING_FRAME_NUM);
 
 	const auto position_uniform_buffer_size = sizeof(decltype(*m_ptrPosition));
-	auto& uniform_buffers_map = m_ptrShaderAttachment->GetUniformBuffersMap();
+	auto& uniform_buffers_map = m_ptrRenderer->GetUniformBuffersMap();
 	uniform_buffers_map["position"] = {};
 	for (size_t idx = 0; idx < hephics::BUFFERING_FRAME_NUM; idx++)
 	{
@@ -43,7 +43,7 @@ void SampleActor::LoadData()
 		vk::DescriptorBufferInfo buffer_info(
 			uniform_buffers.at(idx)->GetBuffer().get(), 0, position_uniform_buffer_size);
 
-		const auto& texture = hephics::asset::AssetManager::GetTexture("room");
+		const auto& texture = hephics::asset::Manager::GetTexture("room");
 		vk::DescriptorImageInfo image_info(texture->GetSampler().get(),
 			texture->GetImage()->GetView().get(), vk::ImageLayout::eShaderReadOnlyOptimal);
 
@@ -59,8 +59,8 @@ void SampleActor::SetPipeline()
 	const auto& gpu_instance = hephics::GPUHandler::GetInstance();
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& render_pass = gpu_instance->GetSwapChain()->GetRenderPass();
-	auto& ref_descriptor_set = m_ptrShaderAttachment->GetDescriptorSet();
-	auto& ref_graphic_pipeline = m_ptrShaderAttachment->GetGraphicPipeline();
+	auto& ref_descriptor_set = m_ptrRenderer->GetDescriptorSet();
+	auto& ref_graphic_pipeline = m_ptrRenderer->GetGraphicPipeline();
 
 	vk_interface::component::ShaderProvider::AddShader(logical_device, "vert/sample_shader_3d.vert", "room");
 	vk_interface::component::ShaderProvider::AddShader(logical_device, "frag/sample_shader_3d.frag", "room");
@@ -116,7 +116,9 @@ void SampleActor::SetPipeline()
 
 void SampleActor::Initialize()
 {
-	m_components.emplace_back(std::make_shared<MoveComponent>());
+	m_ptrPosition = std::make_shared<hephics::actor::Position>();
+	m_ptrRenderer = std::make_shared<hephics::actor::Renderer>();
+	m_attachments.emplace_back(std::make_shared<MoveAttachment>());
 
 	LoadData();
 	SetPipeline();
@@ -125,19 +127,19 @@ void SampleActor::Initialize()
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 
 	{
-		const auto& texture = hephics::asset::AssetManager::GetTexture("room");
-		const auto& cv_mat = hephics::asset::AssetManager::GetCvMat("room");
+		const auto& texture = hephics::asset::Manager::GetTexture("room");
+		const auto& cv_mat = hephics::asset::Manager::GetCvMat("room");
 		texture->CopyTexture(cv_mat);
 	}
 
 	{
-		const auto& object_3d = hephics::asset::AssetManager::GetObject3D("room");
+		const auto& object_3d = hephics::asset::Manager::GetObject3D("room");
 		object_3d->CopyVertexBuffer();
 		object_3d->CopyIndexBuffer();
 	}
 
-	for (const auto& component : m_components)
-		component->Initialize();
+	for (const auto& attachment : m_attachments)
+		attachment->Initialize();
 }
 
 void SampleActor::Update()
@@ -149,7 +151,7 @@ void SampleActor::Update()
 		current_time - start_time).count();
 
 	/* firstly, component's update method */
-	for (const auto& component : m_components)
+	for (const auto& component : m_attachments)
 		component->Update(this);
 
 	const auto& gpu_instance = hephics::GPUHandler::GetInstance();
@@ -157,7 +159,7 @@ void SampleActor::Update()
 	const auto& swap_chain = gpu_instance->GetSwapChain();
 
 	const auto& current_frame_id = swap_chain->GetCurrentFrameId();
-	const auto& uniform_buffer = m_ptrShaderAttachment->GetUniformBuffersMap().at("position").at(current_frame_id);
+	const auto& uniform_buffer = m_ptrRenderer->GetUniformBuffersMap().at("position").at(current_frame_id);
 	auto uniform_address = uniform_buffer->Mapping(logical_device);
 
 	static glm::vec2 scroll;
@@ -182,11 +184,11 @@ void SampleActor::Render()
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& swap_chain = gpu_instance->GetSwapChain();
 	const auto& render_command_buffer = gpu_instance->GetGraphicCommandBuffer("render")->GetCommandBuffer();
-	const auto& pipeline = m_ptrShaderAttachment->GetGraphicPipeline();
+	const auto& pipeline = m_ptrRenderer->GetGraphicPipeline();
 	const auto& desc_set =
-		m_ptrShaderAttachment->GetDescriptorSet()->GetDescriptorSet(swap_chain->GetCurrentFrameId());
+		m_ptrRenderer->GetDescriptorSet()->GetDescriptorSet(swap_chain->GetCurrentFrameId());
 
-	const auto& object_3d = hephics::asset::AssetManager::GetObject3D("room");
+	const auto& object_3d = hephics::asset::Manager::GetObject3D("room");
 
 	render_command_buffer->bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline().get());
 	render_command_buffer->bindVertexBuffers(0, { object_3d->GetVertexBuffer()->GetBuffer().get() }, { 0 });
@@ -195,6 +197,6 @@ void SampleActor::Render()
 		pipeline->GetLayout().get(), 0, desc_set.get(), nullptr);
 	render_command_buffer->drawIndexed(static_cast<uint32_t>(object_3d->GetIndices().size()), 1, 0, 0, 0);
 
-	for (const auto& component : m_components)
-		component->Render();
+	for (const auto& attachment : m_attachments)
+		attachment->Render();
 }

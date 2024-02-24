@@ -73,15 +73,15 @@ public:
 	virtual void Render() override;
 };
 
-class MoveComponent : public hephics::actor::Component
+class MoveAttachment : public hephics::actor::Attachment
 {
 private:
 	virtual void LoadData() override {};
 	virtual void SetPipeline() override {};
 
 public:
-	MoveComponent() = default;
-	~MoveComponent() {}
+	MoveAttachment() = default;
+	~MoveAttachment() {}
 
 	virtual void Initialize() override;
 	virtual void Update(hephics::actor::Actor* const owner) override;

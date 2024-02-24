@@ -48,7 +48,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\app\actor\MoveComponent.cpp">
+    <ClCompile Include="src\app\actor\MoveAttachment.cpp">
       <Filter>src\app\actor</Filter>
     </ClCompile>
     <ClCompile Include="src\app\actor\SampleActor.cpp">
@@ -117,7 +117,9 @@
     <ClCompile Include="pch\stdafx.cpp">
       <Filter>pch</Filter>
     </ClCompile>
-    <ClCompile Include="src\hephics\component\vfx\Particle.cpp" />
+    <ClCompile Include="src\hephics\component\vfx\Particle.cpp">
+      <Filter>src\hephics\component\vfx</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\app\SampleApp.hpp">

@@ -73,7 +73,7 @@ void hephics::Scene::Render()
 void hephics::Scene::ResetScene()
 {
 	GPUHandler::WaitIdle();
-	asset::AssetManager::Reset();
+	asset::Manager::Reset();
 	vk_interface::component::ShaderProvider::Reset();
 }
 

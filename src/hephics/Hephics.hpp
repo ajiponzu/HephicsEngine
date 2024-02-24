@@ -286,13 +286,13 @@ namespace hephics
 			<std::shared_ptr<cv::Mat>, std::shared_ptr<Texture>, std::shared_ptr<Texture3D>,
 			std::shared_ptr<Object3D>, std::shared_ptr<Fbx3D>>;
 
-		class AssetManager
+		class Manager
 		{
 		private:
 			static std::unordered_map<std::string, std::unordered_map<std::string, AssetVariant>> s_assetDictionaries;
 
-			AssetManager() = delete;
-			~AssetManager() = delete;
+			Manager() = delete;
+			~Manager() = delete;
 
 		public:
 			static void RegistCvMat(const std::string& asset_path, const std::string& asset_key);
@@ -314,32 +314,9 @@ namespace hephics
 		};
 	};
 
-	namespace vfx
-	{
-		class ParticleSystem
-		{
-		public:
-			struct Particle
-			{
-				glm::vec2 position;
-				glm::vec2 velocity;
-				glm::vec4 color;
-			};
-
-		protected:
-			static std::unordered_map<std::string, std::vector<Particle>> s_particlesMap;
-
-			ParticleSystem() = delete;
-			~ParticleSystem() = delete;
-
-		public:
-			static void AddParticles(const std::string& key);
-		};
-	};
-
 	namespace actor
 	{
-		class ShaderAttachment
+		class Renderer
 		{
 		protected:
 			std::shared_ptr<vk_interface::graphic::Pipeline> m_ptrGraphicPipeline;
@@ -348,12 +325,12 @@ namespace hephics
 				std::array<std::shared_ptr<hephics_helper::UniformBuffer>, BUFFERING_FRAME_NUM>> m_uniformBuffersMap;
 
 		public:
-			ShaderAttachment()
+			Renderer()
 			{
 				m_ptrGraphicPipeline = std::make_shared<vk_interface::graphic::Pipeline>();
 				m_ptrDescriptorSet = std::make_shared<vk_interface::component::DescriptorSet>();
 			}
-			~ShaderAttachment() {}
+			~Renderer() {}
 
 			auto& GetGraphicPipeline() { return m_ptrGraphicPipeline; }
 			auto& GetDescriptorSet() { return m_ptrDescriptorSet; }
@@ -367,21 +344,18 @@ namespace hephics
 			alignas(16) glm::mat4 projection;
 		};
 
-		class Component
+		class Attachment
 		{
 		protected:
-			std::shared_ptr<ShaderAttachment> m_ptrShaderAttachment;
+			std::shared_ptr<Renderer> m_ptrRenderer = nullptr;
 			bool m_visible = false;
 
 			virtual void LoadData() {}
 			virtual void SetPipeline() {}
 
 		public:
-			Component() : m_visible(true)
-			{
-				m_ptrShaderAttachment = std::make_shared<ShaderAttachment>();
-			}
-			~Component() {}
+			Attachment() : m_visible(true) {}
+			~Attachment() {}
 
 			void SetVisible(const bool& is_visible) { m_visible = is_visible; }
 			const auto& IsVisible() const { return m_visible; }
@@ -394,20 +368,16 @@ namespace hephics
 		class Actor
 		{
 		protected:
-			std::shared_ptr<ShaderAttachment> m_ptrShaderAttachment;
-			std::vector<std::shared_ptr<Component>> m_components;
-			std::shared_ptr<Position> m_ptrPosition;
+			std::shared_ptr<Position> m_ptrPosition = nullptr;
+			std::shared_ptr<Renderer> m_ptrRenderer = nullptr;
+			std::vector<std::shared_ptr<Attachment>> m_attachments;
 			bool m_visible = false;
 
 			virtual void LoadData() {}
 			virtual void SetPipeline() {}
 
 		public:
-			Actor() : m_visible(true)
-			{
-				m_ptrShaderAttachment = std::make_shared<ShaderAttachment>();
-				m_ptrPosition = std::make_shared<Position>();
-			}
+			Actor() : m_visible(true) {}
 			~Actor() {}
 
 			void SetVisible(const bool& is_visible) { m_visible = is_visible; }
@@ -418,6 +388,39 @@ namespace hephics
 			virtual void Render() {}
 
 			auto& GetPosition() { return m_ptrPosition; }
+		};
+	};
+
+	namespace vfx
+	{
+		namespace particle_system
+		{
+			class Engine : actor::Attachment
+			{
+			protected:
+				struct Particle
+				{
+					glm::vec2 position;
+					glm::vec2 velocity;
+					glm::vec4 color;
+				};
+
+				std::vector<Particle> m_particles;
+
+			public:
+				Engine() = default;
+
+				Engine(const size_t& particle_num) : actor::Attachment()
+				{
+					m_particles.resize(particle_num);
+				}
+
+				virtual void Initialize() override;
+
+				virtual void Update(actor::Actor* const owner) override;
+
+				virtual void Render() override;
+			};
 		};
 	};
 

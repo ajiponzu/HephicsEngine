@@ -1,10 +1,10 @@
 #include "../SampleApp.hpp"
 
-void MoveComponent::Initialize()
+void MoveAttachment::Initialize()
 {
 }
 
-void MoveComponent::Update(hephics::actor::Actor* const owner)
+void MoveAttachment::Update(hephics::actor::Actor* const owner)
 {
 	static constexpr auto VERTICAL_MOVEMENT = 2.0f;
 	static constexpr auto HORIZONTAL_MOVEMENT = 2.0f;
@@ -69,6 +69,6 @@ void MoveComponent::Update(hephics::actor::Actor* const owner)
 	}
 }
 
-void MoveComponent::Render()
+void MoveAttachment::Render()
 {
 }

@@ -12,7 +12,7 @@ template<> struct std::hash<hephics::asset::VertexData>
 };
 
 std::unordered_map<std::string, std::unordered_map<std::string, hephics::asset::AssetVariant>>
-hephics::asset::AssetManager::s_assetDictionaries;
+hephics::asset::Manager::s_assetDictionaries;
 
 void hephics::asset::Texture::GenerateMipmaps(const uint32_t& width, const uint32_t& height)
 {
@@ -82,8 +82,8 @@ hephics::asset::Texture::Texture(const std::string& path, const std::string& cv_
 {
 	const auto& gpu_instance = GPUHandler::GetInstance();
 
-	hephics::asset::AssetManager::RegistCvMat(path, cv_mat_key);
-	const auto& cv_mat = hephics::asset::AssetManager::GetCvMat(cv_mat_key);
+	hephics::asset::Manager::RegistCvMat(path, cv_mat_key);
+	const auto& cv_mat = hephics::asset::Manager::GetCvMat(cv_mat_key);
 	const auto& cv_mat_size = cv_mat->size();
 	m_miplevel = static_cast<uint32_t>(std::floor(std::log2(std::max(cv_mat_size.width, cv_mat_size.height)))) + 1U;
 
@@ -304,7 +304,7 @@ hephics::asset::Object3D::Object3D(const std::string& path)
 		std::make_shared<hephics_helper::GPUBuffer>(gpu_instance, index_size, vk::BufferUsageFlagBits::eIndexBuffer);
 }
 
-void hephics::asset::AssetManager::RegistCvMat(const std::string& asset_path, const std::string& asset_key)
+void hephics::asset::Manager::RegistCvMat(const std::string& asset_path, const std::string& asset_key)
 {
 	if (!s_assetDictionaries.contains("cv_mat"))
 		s_assetDictionaries["cv_mat"] = {};
@@ -317,7 +317,7 @@ void hephics::asset::AssetManager::RegistCvMat(const std::string& asset_path, co
 	s_assetDictionaries.at("cv_mat").emplace(asset_key, std::make_shared<cv::Mat>(img));
 }
 
-void hephics::asset::AssetManager::RegistCvMat(const std::string& asset_key, const cv::Mat& cv_mat)
+void hephics::asset::Manager::RegistCvMat(const std::string& asset_key, const cv::Mat& cv_mat)
 {
 	if (!s_assetDictionaries.contains("cv_mat"))
 		s_assetDictionaries["cv_mat"] = {};
@@ -328,7 +328,7 @@ void hephics::asset::AssetManager::RegistCvMat(const std::string& asset_key, con
 	s_assetDictionaries.at("cv_mat").emplace(asset_key, std::make_shared<cv::Mat>(cv_mat));
 }
 
-void hephics::asset::AssetManager::RegistObject3D(const std::string& asset_path, const std::string& asset_key)
+void hephics::asset::Manager::RegistObject3D(const std::string& asset_path, const std::string& asset_key)
 {
 	if (!s_assetDictionaries.contains("object_3d"))
 		s_assetDictionaries["object_3d"] = {};
@@ -340,7 +340,7 @@ void hephics::asset::AssetManager::RegistObject3D(const std::string& asset_path,
 		std::make_shared<Object3D>(std::format("assets/model/{}", asset_path)));
 }
 
-void hephics::asset::AssetManager::RegistFbx3D(const std::string& asset_path, const std::string& asset_key)
+void hephics::asset::Manager::RegistFbx3D(const std::string& asset_path, const std::string& asset_key)
 {
 	if (!s_assetDictionaries.contains("fbx_3d"))
 		s_assetDictionaries["fbx_3d"] = {};
@@ -352,7 +352,7 @@ void hephics::asset::AssetManager::RegistFbx3D(const std::string& asset_path, co
 		std::make_shared<Fbx3D>(std::format("assets/model/{}", asset_path)));
 }
 
-void hephics::asset::AssetManager::RegistTexture(const std::string& asset_path, const std::string& asset_key)
+void hephics::asset::Manager::RegistTexture(const std::string& asset_path, const std::string& asset_key)
 {
 	if (!s_assetDictionaries.contains("texture"))
 		s_assetDictionaries["texture"] = {};
@@ -363,7 +363,7 @@ void hephics::asset::AssetManager::RegistTexture(const std::string& asset_path, 
 	s_assetDictionaries.at("texture").emplace(asset_key, std::make_shared<Texture>(asset_path, asset_key));
 }
 
-void hephics::asset::AssetManager::RegistTexture(const std::string& asset_key, const cv::Mat& cv_mat)
+void hephics::asset::Manager::RegistTexture(const std::string& asset_key, const cv::Mat& cv_mat)
 {
 	if (!s_assetDictionaries.contains("texture"))
 		s_assetDictionaries["texture"] = {};
@@ -375,7 +375,7 @@ void hephics::asset::AssetManager::RegistTexture(const std::string& asset_key, c
 	s_assetDictionaries.at("texture").emplace(asset_key, std::make_shared<Texture>(std::make_shared<cv::Mat>(cv_mat)));
 }
 
-void hephics::asset::AssetManager::RegistTexture3D(const Texture3D& texture_3d, const std::string& asset_key)
+void hephics::asset::Manager::RegistTexture3D(const Texture3D& texture_3d, const std::string& asset_key)
 {
 	if (!s_assetDictionaries.contains("texture_3d"))
 		s_assetDictionaries["texture_3d"] = {};
@@ -386,7 +386,7 @@ void hephics::asset::AssetManager::RegistTexture3D(const Texture3D& texture_3d, 
 	s_assetDictionaries.at("texture_3d").emplace(asset_key, std::make_shared<Texture3D>(texture_3d));
 }
 
-const std::shared_ptr<cv::Mat>& hephics::asset::AssetManager::GetCvMat(const std::string& asset_key)
+const std::shared_ptr<cv::Mat>& hephics::asset::Manager::GetCvMat(const std::string& asset_key)
 {
 	if (!s_assetDictionaries.contains("cv_mat"))
 		throw std::runtime_error("cv_mat: not found");
@@ -399,7 +399,7 @@ const std::shared_ptr<cv::Mat>& hephics::asset::AssetManager::GetCvMat(const std
 }
 
 const std::shared_ptr<hephics::asset::Texture>&
-hephics::asset::AssetManager::GetTexture(const std::string& asset_key)
+hephics::asset::Manager::GetTexture(const std::string& asset_key)
 {
 	if (!s_assetDictionaries.contains("texture"))
 		throw std::runtime_error("texture: not found");
@@ -411,7 +411,7 @@ hephics::asset::AssetManager::GetTexture(const std::string& asset_key)
 	return std::get<std::shared_ptr<Texture>>(asset_dictionary.at(asset_key));
 }
 
-const std::shared_ptr<hephics::asset::Texture3D>& hephics::asset::AssetManager::GetTexture3D(const std::string& asset_key)
+const std::shared_ptr<hephics::asset::Texture3D>& hephics::asset::Manager::GetTexture3D(const std::string& asset_key)
 {
 	if (!s_assetDictionaries.contains("texture_3d"))
 		throw std::runtime_error("texture_3d: not found");
@@ -424,7 +424,7 @@ const std::shared_ptr<hephics::asset::Texture3D>& hephics::asset::AssetManager::
 }
 
 const std::shared_ptr<hephics::asset::Object3D>&
-hephics::asset::AssetManager::GetObject3D(const std::string& asset_key)
+hephics::asset::Manager::GetObject3D(const std::string& asset_key)
 {
 	if (!s_assetDictionaries.contains("object_3d"))
 		throw std::runtime_error("object_3d: not found");
@@ -436,7 +436,7 @@ hephics::asset::AssetManager::GetObject3D(const std::string& asset_key)
 	return std::get<std::shared_ptr<Object3D>>(asset_dictionary.at(asset_key));
 }
 
-const std::shared_ptr<hephics::asset::Fbx3D>& hephics::asset::AssetManager::GetFbx3D(const std::string& asset_key)
+const std::shared_ptr<hephics::asset::Fbx3D>& hephics::asset::Manager::GetFbx3D(const std::string& asset_key)
 {
 	if (!s_assetDictionaries.contains("fbx_3d"))
 		throw std::runtime_error("object_3d: not found");
