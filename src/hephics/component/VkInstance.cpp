@@ -173,7 +173,7 @@ void hephics::VkInstance::SetSwapChain()
 	const auto swap_chain_support = hephics_helper::vk_init::query_swap_chain_support(m_physicalDevice, m_windowSurface);
 
 	const auto surface_format = hephics_helper::vk_init::choose_swap_surface_format(swap_chain_support.formats,
-		vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear);
+		vk::Format::eR8G8B8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear);
 	const auto present_mode = hephics_helper::vk_init::choose_swap_present_mode(swap_chain_support.present_modes,
 		vk::PresentModeKHR::eMailbox);
 	const auto extent = hephics_helper::vk_init::choose_swap_extent(swap_chain_support.capabilities,

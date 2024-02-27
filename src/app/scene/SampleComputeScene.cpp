@@ -27,7 +27,6 @@ void SampleComputeScene::Initialize()
 		});
 
 	m_actors.emplace_back(std::make_shared<SampleComputeActor>());
-	m_actors.emplace_back(std::make_shared<SampleActorAnother>());
 
 	Scene::Initialize();
 }

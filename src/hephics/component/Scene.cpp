@@ -123,9 +123,11 @@ void hephics::Scene::WriteScreenImage() const
 	gpu_instance->SubmitCopyGraphicResource(submit_info);
 
 	auto staging_map_address = staging_buffer->Mapping(logical_device);
-	cv::Mat srcreen_image(image_high, image_wid, CV_8UC4, staging_map_address);
+	cv::Mat screen_image(image_high, image_wid, CV_8UC4, staging_map_address);
+	cv::cvtColor(screen_image, screen_image, cv::COLOR_RGBA2BGR);
+
 	const auto current_time = std::chrono::system_clock::now();
 	std::chrono::sys_seconds sec_tp = std::chrono::floor<std::chrono::seconds>(current_time);
-	cv::imwrite(std::format("output/screenshot/screenshot_{:%Y_%m%d_%H%M%S}.png", sec_tp), srcreen_image);
+	cv::imwrite(std::format("output/screenshot/screenshot_{:%Y_%m%d_%H%M%S}.png", sec_tp), screen_image);
 	staging_buffer->Unmapping(logical_device);
 }

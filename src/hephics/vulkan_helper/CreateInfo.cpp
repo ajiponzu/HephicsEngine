@@ -136,10 +136,10 @@ std::vector<vk::AttachmentDescription> hephics_helper::simple_create_info::get_r
 		vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
 	vk::AttachmentDescription depth_attachment({}, depth_format,
 		sample_count, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eDontCare,
-		vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
+		vk::AttachmentLoadOp::eLoad, vk::AttachmentStoreOp::eStore,
 		vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 	vk::AttachmentDescription color_resolve_attachment({}, color_format,
-		vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eStore,
+		vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
 		vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
 		vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 

@@ -20,7 +20,7 @@ void hephics::vfx::particle_system::Engine::LoadData()
 		float_t position_y = radius * std::sin(theta_radian);
 
 		particle.position = glm::vec2(position_x, position_y);
-		particle.velocity = glm::normalize(particle.position) * 0.00025f;
+		particle.velocity = glm::normalize(particle.position) * 0.00015f;
 		particle.color = glm::vec4(random_distribution(random_engine),
 			random_distribution(random_engine), random_distribution(random_engine), 1.0f);
 	}
@@ -149,7 +149,9 @@ void hephics::vfx::particle_system::Engine::SetPipeline()
 		vk::PipelineMultisampleStateCreateInfo multisampling({}, gpu_instance->GetMultiSampleCount(), VK_FALSE);
 
 		vk::PipelineDepthStencilStateCreateInfo depth_stencil({}, VK_TRUE, VK_TRUE,
-			vk::CompareOp::eLess, VK_FALSE, VK_FALSE);
+			vk::CompareOp::eLessOrEqual, VK_FALSE, VK_FALSE);
+		depth_stencil.setMinDepthBounds(0.0f);
+		depth_stencil.setMaxDepthBounds(1.0f);
 
 		vk::PipelineColorBlendAttachmentState color_blend_attachment(VK_FALSE);
 		color_blend_attachment.setColorWriteMask(
@@ -160,10 +162,10 @@ void hephics::vfx::particle_system::Engine::SetPipeline()
 		color_blend_attachment.setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha);
 		color_blend_attachment.setDstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha);
 		color_blend_attachment.setAlphaBlendOp(vk::BlendOp::eAdd);
-		color_blend_attachment.setSrcAlphaBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha);
+		color_blend_attachment.setSrcAlphaBlendFactor(vk::BlendFactor::eOne);
 		color_blend_attachment.setDstAlphaBlendFactor(vk::BlendFactor::eZero);
 
-		vk::PipelineColorBlendStateCreateInfo color_blending({}, VK_FALSE, vk::LogicOp::eCopy, 1, &color_blend_attachment);
+		vk::PipelineColorBlendStateCreateInfo color_blending({}, VK_FALSE, vk::LogicOp::eCopy, color_blend_attachment);
 
 		std::vector<vk::DynamicState> dynamic_states =
 		{

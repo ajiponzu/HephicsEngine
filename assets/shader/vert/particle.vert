@@ -11,7 +11,7 @@ layout(location = 0) out vec3 fragColor;
 
 void main()
 {
-    gl_PointSize = 10.0 * ubo.deltaTime / ubo.deltaTime;
+    gl_PointSize = 40.0;
     gl_Position = vec4(inPosition.xy, 0.0, 1.0);
     fragColor = inColor.rgb;
 }
