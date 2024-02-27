@@ -46,6 +46,9 @@
     <Filter Include="src\hephics\component\vfx">
       <UniqueIdentifier>{ba40f59a-7509-483b-9f6b-221047fb9b26}</UniqueIdentifier>
     </Filter>
+    <Filter Include="assets\shader\comp">
+      <UniqueIdentifier>{2e4f0b39-6773-4225-b8df-713df55a11d3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\app\actor\MoveAttachment.cpp">
@@ -120,6 +123,12 @@
     <ClCompile Include="src\hephics\component\vfx\Particle.cpp">
       <Filter>src\hephics\component\vfx</Filter>
     </ClCompile>
+    <ClCompile Include="src\app\scene\SampleComputeScene.cpp">
+      <Filter>src\app\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\app\actor\SampleComputeActor.cpp">
+      <Filter>src\app\actor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\app\SampleApp.hpp">
@@ -150,6 +159,15 @@
     </None>
     <None Include="assets\shader\frag\sample_shader_3d.frag">
       <Filter>assets\shader\frag</Filter>
+    </None>
+    <None Include="assets\shader\comp\particle.comp">
+      <Filter>assets\shader\comp</Filter>
+    </None>
+    <None Include="assets\shader\frag\particle.frag">
+      <Filter>assets\shader\frag</Filter>
+    </None>
+    <None Include="assets\shader\vert\particle.vert">
+      <Filter>assets\shader\vert</Filter>
     </None>
   </ItemGroup>
 </Project>

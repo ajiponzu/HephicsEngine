@@ -10,10 +10,12 @@ void SampleApp::Initialize()
 	const auto& window = hephics::window::Manager::GetWindow();
 
 	hephics::GPUHandler::AddGraphicPurpose({ "render", "copy" });
+	hephics::GPUHandler::AddComputePurpose({ "particle" });
 	hephics::GPUHandler::InitializeInstance();
 
 	m_sceneDictionary.emplace("first", [] { return std::make_shared<SampleScene>("first"); });
 	m_sceneDictionary.emplace("second", [] { return std::make_shared<SampleSceneAnother>("second"); });
+	m_sceneDictionary.emplace("compute", [] { return std::make_shared<SampleComputeScene>("compute"); });
 
 	m_ptrCurrentScene = m_sceneDictionary.at("first")();
 	m_ptrCurrentScene->Initialize();

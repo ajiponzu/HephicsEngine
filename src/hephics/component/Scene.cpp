@@ -1,5 +1,7 @@
 #include "../Hephics.hpp"
 
+std::chrono::steady_clock::time_point hephics::Scene::s_startTimePoint;
+float_t hephics::Scene::s_deltaTime = 0.0f;
 std::vector<std::shared_ptr<hephics_helper::StagingBuffer>> hephics::Scene::s_stagingBuffers;
 
 void hephics::Scene::Initialize()
@@ -21,6 +23,8 @@ void hephics::Scene::Initialize()
 	vk::SubmitInfo submit_info({}, {}, submitted_command_buffers);
 	gpu_instance->SubmitCopyGraphicResource(submit_info);
 	Scene::GetStagingBuffers().clear();
+
+	s_startTimePoint = std::chrono::high_resolution_clock::now();
 }
 
 void hephics::Scene::Update()
@@ -28,6 +32,10 @@ void hephics::Scene::Update()
 	const auto& gpu_instance = GPUHandler::GetInstance();
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& swap_chain = gpu_instance->GetSwapChain();
+
+	auto current_time_point = std::chrono::high_resolution_clock::now();
+	s_deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(
+		current_time_point - s_startTimePoint).count();
 
 	swap_chain->AcquireNextImageIdx(logical_device); // update: next_image_idx, before using command buffer
 	swap_chain->WaitFence(logical_device);
@@ -42,7 +50,6 @@ void hephics::Scene::Render()
 {
 	const auto& gpu_instance = GPUHandler::GetInstance();
 	const auto& swap_chain = gpu_instance->GetSwapChain();
-	const auto& command_buffers = gpu_instance->GetGraphicCommandBuffers();
 	const auto& render_command_buffer = gpu_instance->GetGraphicCommandBuffer("render");
 
 	render_command_buffer->ResetCommands({});
@@ -68,6 +75,9 @@ void hephics::Scene::Render()
 	const auto present_info = swap_chain->GetPresentInfo();
 	gpu_instance->PresentFrame(present_info);
 	swap_chain->PrepareNextFrame();
+
+	if (!GPUHandler::GetComputePurpose().empty())
+		gpu_instance->GetComputingSyncObject()->PrepareNextFrame();
 }
 
 void hephics::Scene::ResetScene()

@@ -17,7 +17,7 @@ void SampleSceneAnother::Initialize()
 					break;
 				case GLFW_KEY_ENTER:
 					m_isChangedScene = true;
-					m_nextSceneName = "first";
+					m_nextSceneName = "compute";
 					break;
 				case GLFW_KEY_SPACE:
 					WriteScreenImage();

@@ -84,13 +84,49 @@ namespace hephics
 		};
 	};
 
+	class ComputingSyncObject
+	{
+	protected:
+		std::vector<std::shared_ptr<vk_interface::component::Fence>> m_fences;
+		std::vector<vk::UniqueSemaphore> m_semaphores;
+
+		uint32_t m_currentFrameId = 0U;
+
+	public:
+		ComputingSyncObject() = default;
+		~ComputingSyncObject() {}
+
+		void SetSyncObjects(const vk::UniqueDevice& logical_device, const int32_t& buffering_num);
+
+		vk::SubmitInfo GetComputingSubmitInfo(
+			const std::vector<vk::CommandBuffer>& submitted_command_buffers) const;
+
+		const auto& GetCurrentFrameId() const { return m_currentFrameId; }
+
+		const auto& GetCurrentFence() const { return m_fences.at(m_currentFrameId); }
+
+		const auto& GetCurrentSemaphore() const { return m_semaphores.at(m_currentFrameId); }
+
+		void WaitFence(const vk::UniqueDevice& logical_device);
+
+		void CancelWaitFence(const vk::UniqueDevice& logical_device);
+
+		void PrepareNextFrame();
+
+		void Clear(const vk::UniqueDevice& logical_device);
+	};
+
 	class VkInstance : public vk_interface::Instance
 	{
 	protected:
 		friend class Renderer;
 
+		std::shared_ptr<ComputingSyncObject> m_ptrComputingSyncObject;
+
 		std::vector<std::unordered_map<std::string, std::shared_ptr<vk_interface::component::CommandBuffer>>>
 			m_graphicCommandBuffers;
+		std::vector<std::unordered_map<std::string, std::shared_ptr<vk_interface::component::CommandBuffer>>>
+			m_computeCommandBuffers;
 
 		virtual void SetInstance(const vk::ApplicationInfo& app_info);
 		virtual void SetWindowSurface();
@@ -123,6 +159,8 @@ namespace hephics
 
 		void PresentFrame(const vk::PresentInfoKHR& present_info);
 
+		void SubmitComputingCommand(const vk::SubmitInfo& submit_info);
+
 		virtual vk::Format FindSupportedFormat(const std::vector<vk::Format>& candidates,
 			const vk::ImageTiling& tilling, const vk::FormatFeatureFlags& features) const;
 		virtual vk::Format FindDepthFormat() const;
@@ -133,6 +171,11 @@ namespace hephics
 
 		auto& GetGraphicCommandBuffers() { return m_graphicCommandBuffers.at(m_ptrSwapChain->GetNextImageId()); }
 		std::shared_ptr<vk_interface::component::CommandBuffer>& GetGraphicCommandBuffer(const std::string& purpose);
+
+		auto& GetComputeCommandBuffers() { return m_computeCommandBuffers.at(m_ptrSwapChain->GetNextImageId()); }
+		std::shared_ptr<vk_interface::component::CommandBuffer>& GetComputeCommandBuffer(const std::string& purpose);
+
+		const auto& GetComputingSyncObject() { return m_ptrComputingSyncObject; }
 	};
 
 	namespace asset
@@ -337,6 +380,27 @@ namespace hephics
 			auto& GetUniformBuffersMap() { return m_uniformBuffersMap; }
 		};
 
+		class ComputingSystem
+		{
+		protected:
+			std::shared_ptr<vk_interface::compute::Pipeline> m_ptrComputePipeline;
+			std::shared_ptr<vk_interface::component::DescriptorSet> m_ptrDescriptorSet;
+			std::unordered_map<std::string,
+				std::array<std::shared_ptr<hephics_helper::UniformBuffer>, BUFFERING_FRAME_NUM>> m_uniformBuffersMap;
+
+		public:
+			ComputingSystem()
+			{
+				m_ptrComputePipeline = std::make_shared<vk_interface::compute::Pipeline>();
+				m_ptrDescriptorSet = std::make_shared<vk_interface::component::DescriptorSet>();
+			}
+			~ComputingSystem() {}
+
+			auto& GetComputePipeline() { return m_ptrComputePipeline; }
+			auto& GetDescriptorSet() { return m_ptrDescriptorSet; }
+			auto& GetUniformBuffersMap() { return m_uniformBuffersMap; }
+		};
+
 		struct Position
 		{
 			alignas(16) glm::mat4 model;
@@ -348,6 +412,7 @@ namespace hephics
 		{
 		protected:
 			std::shared_ptr<Renderer> m_ptrRenderer = nullptr;
+			std::shared_ptr<ComputingSystem> m_ptrComputingSystem = nullptr;
 			bool m_visible = false;
 
 			virtual void LoadData() {}
@@ -370,6 +435,7 @@ namespace hephics
 		protected:
 			std::shared_ptr<Position> m_ptrPosition = nullptr;
 			std::shared_ptr<Renderer> m_ptrRenderer = nullptr;
+			std::shared_ptr<ComputingSystem> m_ptrComputingSystem = nullptr;
 			std::vector<std::shared_ptr<Attachment>> m_attachments;
 			bool m_visible = false;
 
@@ -395,7 +461,7 @@ namespace hephics
 	{
 		namespace particle_system
 		{
-			class Engine : actor::Attachment
+			class Engine : public actor::Attachment
 			{
 			protected:
 				struct Particle
@@ -403,9 +469,28 @@ namespace hephics
 					glm::vec2 position;
 					glm::vec2 velocity;
 					glm::vec4 color;
+
+					static auto get_binding_description()
+					{
+						return vk::VertexInputBindingDescription(0, sizeof(Particle), vk::VertexInputRate::eVertex);
+					}
+
+					static auto get_attribute_descriptions()
+					{
+						std::array<vk::VertexInputAttributeDescription, 2> attribute_descriptions;
+						attribute_descriptions.at(0) = { 0, 0, vk::Format::eR32G32Sfloat, offsetof(Particle, position) };
+						attribute_descriptions.at(1) = { 1, 0, vk::Format::eR32G32B32A32Sfloat, offsetof(Particle, color) };
+
+						return attribute_descriptions;
+					}
 				};
 
 				std::vector<Particle> m_particles;
+				std::array<std::shared_ptr<hephics_helper::GPUBuffer>, BUFFERING_FRAME_NUM>
+					m_vertexStorageBuffers;
+
+				virtual void LoadData() override;
+				virtual void SetPipeline() override;
 
 			public:
 				Engine() = default;
@@ -427,6 +512,8 @@ namespace hephics
 	class Scene
 	{
 	protected:
+		static std::chrono::steady_clock::time_point s_startTimePoint;
+		static float_t s_deltaTime;
 		static std::vector<std::shared_ptr<hephics_helper::StagingBuffer>> s_stagingBuffers;
 
 		std::vector<std::shared_ptr<actor::Actor>> m_actors;
@@ -451,6 +538,7 @@ namespace hephics
 		const auto& GetNextSceneName() const { return m_nextSceneName; }
 		const auto& GetWindowTitle() const { return m_windowTitle; }
 		static auto& GetStagingBuffers() { return s_stagingBuffers; }
+		static auto& GetDeltaTime() { return s_deltaTime; }
 
 		static void ResetScene();
 
@@ -477,6 +565,7 @@ namespace hephics
 	{
 	private:
 		static std::unordered_set<std::string> s_graphicPurposeSet;
+		static std::unordered_set<std::string> s_computePurposeSet;
 		static std::shared_ptr<VkInstance> s_ptrGPUInstance;
 
 		GPUHandler() = delete;
@@ -491,6 +580,7 @@ namespace hephics
 		}
 
 		static void AddGraphicPurpose(const std::vector<std::string>& purpose_list);
+		static void AddComputePurpose(const std::vector<std::string>& purpose_list);
 
 		static void InitializeInstance();
 
@@ -499,6 +589,7 @@ namespace hephics
 		static void WaitIdle() { s_ptrGPUInstance->GetLogicalDevice()->waitIdle(); }
 
 		static const auto& GetGraphicPurpose() { return s_graphicPurposeSet; }
+		static const auto& GetComputePurpose() { return s_computePurposeSet; }
 	};
 
 	class Engine

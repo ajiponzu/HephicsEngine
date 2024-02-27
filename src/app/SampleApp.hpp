@@ -34,9 +34,24 @@ private:
 
 public:
 	SampleSceneAnother(const std::string& scene_name)
-		:hephics::Scene(scene_name)
+		: hephics::Scene(scene_name)
 	{}
 	~SampleSceneAnother() {}
+
+	virtual void Initialize() override;
+	virtual void Update() override;
+	virtual void Render() override;
+};
+
+class SampleComputeScene : public hephics::Scene
+{
+private:
+
+public:
+	SampleComputeScene(const std::string& scene_name)
+		: hephics::Scene(scene_name)
+	{}
+	~SampleComputeScene() {}
 
 	virtual void Initialize() override;
 	virtual void Update() override;
@@ -67,6 +82,21 @@ private:
 public:
 	SampleActorAnother() = default;
 	~SampleActorAnother() {}
+
+	virtual void Initialize() override;
+	virtual void Update() override;
+	virtual void Render() override;
+};
+
+class SampleComputeActor : public hephics::actor::Actor
+{
+private:
+	virtual void LoadData() override;
+	virtual void SetPipeline() override;
+
+public:
+	SampleComputeActor() = default;
+	~SampleComputeActor() {}
 
 	virtual void Initialize() override;
 	virtual void Update() override;

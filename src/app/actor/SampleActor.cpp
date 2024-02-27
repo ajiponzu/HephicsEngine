@@ -31,11 +31,8 @@ void SampleActor::LoadData()
 	const auto position_uniform_buffer_size = sizeof(decltype(*m_ptrPosition));
 	auto& uniform_buffers_map = m_ptrRenderer->GetUniformBuffersMap();
 	uniform_buffers_map["position"] = {};
-	for (size_t idx = 0; idx < hephics::BUFFERING_FRAME_NUM; idx++)
-	{
-		auto& uniform_buffer = uniform_buffers_map.at("position").at(idx);
+	for (auto& uniform_buffer : uniform_buffers_map.at("position"))
 		uniform_buffer.reset(new hephics_helper::UniformBuffer(gpu_instance, position_uniform_buffer_size));
-	}
 
 	for (size_t idx = 0; idx < hephics::BUFFERING_FRAME_NUM; idx++)
 	{
@@ -150,7 +147,6 @@ void SampleActor::Update()
 	auto time = std::chrono::duration<float, std::chrono::seconds::period>(
 		current_time - start_time).count();
 
-	/* firstly, component's update method */
 	for (const auto& component : m_attachments)
 		component->Update(this);
 
@@ -180,7 +176,6 @@ void SampleActor::Render()
 {
 	const auto& gpu_instance = hephics::GPUHandler::GetInstance();
 
-	/* firstly, actor's render method */
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& swap_chain = gpu_instance->GetSwapChain();
 	const auto& render_command_buffer = gpu_instance->GetGraphicCommandBuffer("render")->GetCommandBuffer();

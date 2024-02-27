@@ -1,5 +1,50 @@
 #include "../Hephics.hpp"
 
+void hephics::ComputingSyncObject::SetSyncObjects(const vk::UniqueDevice& logical_device, const int32_t& buffering_num)
+{
+	for (uint32_t buffering_id = 0U; buffering_id < BUFFERING_FRAME_NUM; buffering_id++)
+	{
+		m_semaphores.emplace_back(logical_device->createSemaphoreUnique({}));
+
+		vk_interface::component::Fence fence;
+		fence.SetFence(logical_device, { vk::FenceCreateFlagBits::eSignaled });
+		m_fences.emplace_back(std::make_shared<decltype(fence)>(std::move(fence)));
+	}
+}
+
+vk::SubmitInfo hephics::ComputingSyncObject::GetComputingSubmitInfo(
+	const std::vector<vk::CommandBuffer>& submitted_command_buffers) const
+{
+	return vk::SubmitInfo(
+		{}, {}, submitted_command_buffers, m_semaphores.at(m_currentFrameId).get()
+	);
+}
+
+void hephics::ComputingSyncObject::WaitFence(const vk::UniqueDevice& logical_device)
+{
+	vk::resultCheck(logical_device->waitForFences(m_fences.at(m_currentFrameId)->GetFence().get(),
+		VK_TRUE, UINT64_MAX), "wait_for_fences");
+}
+
+void hephics::ComputingSyncObject::CancelWaitFence(const vk::UniqueDevice& logical_device)
+{
+	m_fences.at(m_currentFrameId)->Signal(logical_device);
+}
+
+void hephics::ComputingSyncObject::PrepareNextFrame()
+{
+	m_currentFrameId = (m_currentFrameId + 1) % BUFFERING_FRAME_NUM;
+}
+
+void hephics::ComputingSyncObject::Clear(const vk::UniqueDevice& logical_device)
+{
+	for (auto& semaphore : m_semaphores)
+	{
+		logical_device->destroySemaphore(semaphore.get());
+		semaphore.release();
+	}
+}
+
 void hephics::VkInstance::SetInstance(const vk::ApplicationInfo& app_info)
 {
 	static vk::DynamicLoader dl;
@@ -109,10 +154,17 @@ void hephics::VkInstance::SetLogicalDeviceAndQueue()
 		{ "graphics", m_logicalDevice->getQueue(m_queueFamilyIndices.graphics_and_compute_family.value(), 0)},
 		{ "present", m_logicalDevice->getQueue(m_queueFamilyIndices.present_family.value(), 0) }
 	});
-	m_queuesDictionary.emplace(vk::QueueFlagBits::eCompute, std::unordered_map<std::string, vk::Queue>
+
+	if (!GPUHandler::GetComputePurpose().empty())
 	{
-		{ "compute", m_logicalDevice->getQueue(m_queueFamilyIndices.graphics_and_compute_family.value(), 0)}
-	});
+		m_ptrComputingSyncObject = std::make_shared<ComputingSyncObject>();
+		m_ptrComputingSyncObject->SetSyncObjects(m_logicalDevice, hephics::BUFFERING_FRAME_NUM);
+
+		m_queuesDictionary.emplace(vk::QueueFlagBits::eCompute, std::unordered_map<std::string, vk::Queue>
+		{
+			{ "compute", m_logicalDevice->getQueue(m_queueFamilyIndices.graphics_and_compute_family.value(), 0)}
+		});
+	}
 }
 
 void hephics::VkInstance::SetSwapChain()
@@ -229,40 +281,80 @@ void hephics::VkInstance::SetSwapChainSyncObjects()
 
 void hephics::VkInstance::SetCommandPools()
 {
-	vk::CommandPoolCreateInfo create_info(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-		m_queueFamilyIndices.graphics_and_compute_family.value());
+	{
+		vk::CommandPoolCreateInfo create_info(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+			m_queueFamilyIndices.graphics_and_compute_family.value());
 
-	const auto command_pool_size = m_ptrSwapChain->GetFramebuffers().size();
-	std::vector<std::unordered_map<std::string, vk::UniqueCommandPool>> command_pools(command_pool_size);
-	for (size_t idx = 0; idx < command_pool_size; idx++)
-		for (const auto& purpose : GPUHandler::GetGraphicPurpose())
-			command_pools.at(idx).emplace(purpose, m_logicalDevice->createCommandPoolUnique(create_info));
+		const auto command_pool_size = m_ptrSwapChain->GetFramebuffers().size();
+		std::vector<std::unordered_map<std::string, vk::UniqueCommandPool>> command_pools(command_pool_size);
+		for (size_t idx = 0; idx < command_pool_size; idx++)
+			for (const auto& purpose : GPUHandler::GetGraphicPurpose())
+				command_pools.at(idx).emplace(purpose, m_logicalDevice->createCommandPoolUnique(create_info));
 
-	m_commandPoolsDictionary.emplace(vk::QueueFlagBits::eGraphics, std::move(command_pools));
+		m_commandPoolsDictionary.emplace(vk::QueueFlagBits::eGraphics, std::move(command_pools));
+	}
+
+	{
+		vk::CommandPoolCreateInfo create_info(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+			m_queueFamilyIndices.graphics_and_compute_family.value());
+
+		const auto command_pool_size = BUFFERING_FRAME_NUM;
+		std::vector<std::unordered_map<std::string, vk::UniqueCommandPool>> command_pools(command_pool_size);
+		for (size_t idx = 0; idx < command_pool_size; idx++)
+			for (const auto& purpose : GPUHandler::GetComputePurpose())
+				command_pools.at(idx).emplace(purpose, m_logicalDevice->createCommandPoolUnique(create_info));
+
+		m_commandPoolsDictionary.emplace(vk::QueueFlagBits::eCompute, std::move(command_pools));
+	}
 }
 
 void hephics::VkInstance::SetCommandBuffers()
 {
-	const auto& graphic_command_pools = m_commandPoolsDictionary.at(vk::QueueFlagBits::eGraphics);
-	decltype(m_graphicCommandBuffers) graphic_command_buffers(graphic_command_pools.size());
-
-	size_t buffer_idx = 0U;
-	for (const auto& graphic_command_pool : graphic_command_pools)
 	{
-		for (const auto& purpose : GPUHandler::GetGraphicPurpose())
-		{
-			vk::CommandBufferAllocateInfo alloc_info(graphic_command_pool.at(purpose).get(), vk::CommandBufferLevel::ePrimary, 1);
-			auto unique_command_buffers = m_logicalDevice->allocateCommandBuffersUnique(alloc_info);
+		const auto& command_pools = m_commandPoolsDictionary.at(vk::QueueFlagBits::eGraphics);
+		decltype(m_graphicCommandBuffers) command_buffers(command_pools.size());
 
-			vk_interface::component::CommandBuffer new_command_buffer;
-			new_command_buffer.SetCommandBuffer(std::move(unique_command_buffers));
-			graphic_command_buffers.at(buffer_idx).emplace(
-				purpose, std::make_shared<vk_interface::component::CommandBuffer>(std::move(new_command_buffer)));
+		size_t buffer_idx = 0U;
+		for (const auto& command_pool : command_pools)
+		{
+			for (const auto& purpose : GPUHandler::GetGraphicPurpose())
+			{
+				vk::CommandBufferAllocateInfo alloc_info(command_pool.at(purpose).get(), vk::CommandBufferLevel::ePrimary, 1);
+				auto unique_command_buffers = m_logicalDevice->allocateCommandBuffersUnique(alloc_info);
+
+				vk_interface::component::CommandBuffer new_command_buffer;
+				new_command_buffer.SetCommandBuffer(std::move(unique_command_buffers));
+				command_buffers.at(buffer_idx).emplace(
+					purpose, std::make_shared<vk_interface::component::CommandBuffer>(std::move(new_command_buffer)));
+			}
+			buffer_idx++;
 		}
-		buffer_idx++;
+
+		m_graphicCommandBuffers = std::move(command_buffers);
 	}
 
-	m_graphicCommandBuffers = std::move(graphic_command_buffers);
+	{
+		const auto& command_pools = m_commandPoolsDictionary.at(vk::QueueFlagBits::eCompute);
+		decltype(m_computeCommandBuffers) command_buffers(command_pools.size());
+
+		size_t buffer_idx = 0U;
+		for (const auto& command_pool : command_pools)
+		{
+			for (const auto& purpose : GPUHandler::GetComputePurpose())
+			{
+				vk::CommandBufferAllocateInfo alloc_info(command_pool.at(purpose).get(), vk::CommandBufferLevel::ePrimary, 1);
+				auto unique_command_buffers = m_logicalDevice->allocateCommandBuffersUnique(alloc_info);
+
+				vk_interface::component::CommandBuffer new_command_buffer;
+				new_command_buffer.SetCommandBuffer(std::move(unique_command_buffers));
+				command_buffers.at(buffer_idx).emplace(
+					purpose, std::make_shared<vk_interface::component::CommandBuffer>(std::move(new_command_buffer)));
+			}
+			buffer_idx++;
+		}
+
+		m_computeCommandBuffers = std::move(command_buffers);
+	}
 }
 
 hephics::VkInstance::VkInstance()
@@ -332,6 +424,15 @@ void hephics::VkInstance::PresentFrame(const vk::PresentInfoKHR& present_info)
 		"failed to present");
 }
 
+void hephics::VkInstance::SubmitComputingCommand(const vk::SubmitInfo& submit_info)
+{
+	if (!m_queuesDictionary.contains(vk::QueueFlagBits::eCompute))
+		throw std::runtime_error("queue: not found");
+
+	const auto& current_fence = m_ptrComputingSyncObject->GetCurrentFence()->GetFence();
+	m_queuesDictionary.at(vk::QueueFlagBits::eCompute).at("compute").submit(submit_info, current_fence.get());
+}
+
 vk::Format hephics::VkInstance::FindSupportedFormat(const std::vector<vk::Format>& candidates,
 	const vk::ImageTiling& tilling, const vk::FormatFeatureFlags& features) const
 {
@@ -360,4 +461,10 @@ std::shared_ptr<vk_interface::component::CommandBuffer>& hephics::VkInstance::Ge
 {
 	const auto& next_image_id = m_ptrSwapChain->GetNextImageId();
 	return m_graphicCommandBuffers.at(next_image_id).at(purpose);
+}
+
+std::shared_ptr<vk_interface::component::CommandBuffer>& hephics::VkInstance::GetComputeCommandBuffer(const std::string& purpose)
+{
+	const auto& current_frame_id = m_ptrComputingSyncObject->GetCurrentFrameId();
+	return m_computeCommandBuffers.at(current_frame_id).at(purpose);
 }

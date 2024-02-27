@@ -136,7 +136,9 @@
     <ClCompile Include="src\app\actor\MoveAttachment.cpp" />
     <ClCompile Include="src\app\actor\SampleActor.cpp" />
     <ClCompile Include="src\app\actor\SampleActorAnother.cpp" />
+    <ClCompile Include="src\app\actor\SampleComputeActor.cpp" />
     <ClCompile Include="src\app\SampleApp.cpp" />
+    <ClCompile Include="src\app\scene\SampleComputeScene.cpp" />
     <ClCompile Include="src\app\scene\SampleScene.cpp" />
     <ClCompile Include="src\app\scene\SampleSceneAnother.cpp" />
     <ClCompile Include="src\hephics\component\Asset.cpp" />
@@ -165,8 +167,11 @@
     <ClInclude Include="src\hephics\vulkan_interface\Interface.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="assets\shader\comp\particle.comp" />
+    <None Include="assets\shader\frag\particle.frag" />
     <None Include="assets\shader\frag\sample_shader.frag" />
     <None Include="assets\shader\frag\sample_shader_3d.frag" />
+    <None Include="assets\shader\vert\particle.vert" />
     <None Include="assets\shader\vert\sample_shader.vert" />
     <None Include="assets\shader\vert\sample_shader_3d.vert" />
   </ItemGroup>

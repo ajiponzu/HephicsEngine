@@ -364,6 +364,16 @@ namespace vk_interface
 
 			const auto& GetCurrentSwapFence() const { return m_swapFences.at(m_currentFrameId); }
 
+			const auto& GetCurrentImageAvailableSemaphore() const
+			{
+				return m_imageAvailableSemaphores.at(m_currentFrameId);
+			}
+
+			const auto& GetCurrentFinishedSemaphore() const
+			{
+				return m_finishedSemaphores.at(m_currentFrameId);
+			}
+
 			void AcquireNextImageIdx(const vk::UniqueDevice& logical_device);
 
 			void WaitFence(const vk::UniqueDevice& logical_device);
@@ -518,5 +528,5 @@ namespace vk_interface
 		const auto& GetPhysicalDevice() const { return m_physicalDevice; }
 		const auto& GetWindowSurface() const { return m_windowSurface; }
 		const auto& GetQueueFamilyIndices() const { return m_queueFamilyIndices; }
+		};
 	};
-};

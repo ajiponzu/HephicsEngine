@@ -48,9 +48,7 @@ void SampleActorAnother::LoadData()
 
 	vk::DescriptorPoolSize uniform_desc_pool_size(vk::DescriptorType::eUniformBuffer, hephics::BUFFERING_FRAME_NUM);
 	vk::DescriptorPoolSize  sampler_desc_pool_size(vk::DescriptorType::eCombinedImageSampler, hephics::BUFFERING_FRAME_NUM);
-	vk::DescriptorPoolSize  timer_desc_pool_size(vk::DescriptorType::eUniformBuffer, hephics::BUFFERING_FRAME_NUM);
-	vk::DescriptorPoolSize  mouse_desc_pool_size(vk::DescriptorType::eUniformBuffer, hephics::BUFFERING_FRAME_NUM);
-	auto desc_pool_size_list = std::vector{ uniform_desc_pool_size, sampler_desc_pool_size, timer_desc_pool_size, mouse_desc_pool_size };
+	auto desc_pool_size_list = std::vector{ uniform_desc_pool_size, sampler_desc_pool_size, uniform_desc_pool_size, uniform_desc_pool_size };
 	vk::DescriptorPoolCreateInfo desc_pool_create_info(
 		vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, hephics::BUFFERING_FRAME_NUM, desc_pool_size_list);
 	ref_descriptor_set->SetDescriptorPool(logical_device, desc_pool_create_info);
@@ -60,27 +58,18 @@ void SampleActorAnother::LoadData()
 	const auto position_uniform_buffer_size = sizeof(decltype(*m_ptrPosition));
 	auto& uniform_buffers_map = m_ptrRenderer->GetUniformBuffersMap();
 	uniform_buffers_map["position"] = {};
-	for (size_t idx = 0; idx < hephics::BUFFERING_FRAME_NUM; idx++)
-	{
-		auto& uniform_buffer = uniform_buffers_map.at("position").at(idx);
+	for (auto& uniform_buffer : uniform_buffers_map.at("position"))
 		uniform_buffer.reset(new hephics_helper::UniformBuffer(gpu_instance, position_uniform_buffer_size));
-	}
 
 	const auto timer_uniform_buffer_size = sizeof(float_t);
 	uniform_buffers_map["timer"] = {};
-	for (size_t idx = 0; idx < hephics::BUFFERING_FRAME_NUM; idx++)
-	{
-		auto& uniform_buffer = uniform_buffers_map.at("timer").at(idx);
+	for (auto& uniform_buffer : uniform_buffers_map.at("timer"))
 		uniform_buffer.reset(new hephics_helper::UniformBuffer(gpu_instance, timer_uniform_buffer_size));
-	}
 
 	const auto cursor_uniform_buffer_size = sizeof(glm::vec2);
 	uniform_buffers_map["cursor"] = {};
-	for (size_t idx = 0; idx < hephics::BUFFERING_FRAME_NUM; idx++)
-	{
-		auto& uniform_buffer = uniform_buffers_map.at("cursor").at(idx);
+	for (auto& uniform_buffer : uniform_buffers_map.at("cursor"))
 		uniform_buffer.reset(new hephics_helper::UniformBuffer(gpu_instance, cursor_uniform_buffer_size));
-	}
 
 	for (size_t idx = 0; idx < hephics::BUFFERING_FRAME_NUM; idx++)
 	{
@@ -102,10 +91,10 @@ void SampleActorAnother::LoadData()
 
 		vk::WriteDescriptorSet position_buffer_write_desc_set({}, 2, 0, vk::DescriptorType::eUniformBuffer, nullptr, position_buffer_info, nullptr);
 		vk::WriteDescriptorSet image_write_desc_set({}, 3, 0, vk::DescriptorType::eCombinedImageSampler, image_info, nullptr, nullptr);
-		vk::WriteDescriptorSet timer_buffer_write_desc_set({}, 4, 0, vk::DescriptorType::eUniformBuffer, nullptr, timer_buffer_info, nullptr);
-		vk::WriteDescriptorSet cursor_buffer_write_desc_set({}, 5, 0, vk::DescriptorType::eUniformBuffer, nullptr, cursor_buffer_info, nullptr);
+		vk::WriteDescriptorSet timer_write_desc_set({}, 4, 0, vk::DescriptorType::eUniformBuffer, nullptr, timer_buffer_info, nullptr);
+		vk::WriteDescriptorSet cursor_write_desc_set({}, 5, 0, vk::DescriptorType::eUniformBuffer, nullptr, cursor_buffer_info, nullptr);
 		auto write_descriptor_sets = std::vector
-		{ position_buffer_write_desc_set, image_write_desc_set, timer_buffer_write_desc_set, cursor_buffer_write_desc_set };
+		{ position_buffer_write_desc_set, image_write_desc_set, timer_write_desc_set, cursor_write_desc_set };
 		ref_descriptor_set->UpdateDescriptorSet(logical_device, idx, std::move(write_descriptor_sets));
 	}
 }
@@ -205,7 +194,6 @@ void SampleActorAnother::Update()
 	auto time = std::chrono::duration<float, std::chrono::seconds::period>(
 		current_time - start_time).count();
 
-	/* firstly, component's update method */
 	for (const auto& attachment : m_attachments)
 		attachment->Update(this);
 
@@ -260,7 +248,6 @@ void SampleActorAnother::Render()
 {
 	const auto& gpu_instance = hephics::GPUHandler::GetInstance();
 
-	/* firstly, actor's render method */
 	const auto& logical_device = gpu_instance->GetLogicalDevice();
 	const auto& swap_chain = gpu_instance->GetSwapChain();
 	const auto& render_command_buffer = gpu_instance->GetGraphicCommandBuffer("render")->GetCommandBuffer();
